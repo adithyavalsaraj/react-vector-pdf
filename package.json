@@ -10,7 +10,7 @@
   "bugs": {
     "url": "https://github.com/adithyavalsaraj/react-vector-pdf/issues"
   },
-  "homepage": "https://github.com/adithyavalsaraj/react-vector-pdf#readme",
+  "homepage": "https://adithyavalsaraj.github.io/react-vector-pdf/",
   "type": "module",
   "main": "./dist/react-vector-pdf.js",
   "module": "./dist/react-vector-pdf.js",

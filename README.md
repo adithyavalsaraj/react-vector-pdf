@@ -2,6 +2,8 @@
 
 **Vector-based, React-driven PDF generation.**
 
+[**Live Demo**](https://adithyavalsaraj.github.io/react-vector-pdf/)
+
 `react-vector-pdf` is a React wrapper around **jsPDF** that allows you to build complex, multi-page PDFs using declarative React components. Unlike HTML-to-Canvas solutions, this library renders **selectable, searchable vector text**, resulting in smaller file sizes and crystal-clear output at any zoom level.
 
 ## Features
