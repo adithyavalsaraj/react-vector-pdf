@@ -4,7 +4,14 @@ import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
-  plugins: [react(), dts({ insertTypesEntry: true })],
+  plugins: [
+    react(),
+    dts({
+      insertTypesEntry: true,
+      exclude: ["src/demo"],
+      rollupTypes: true,
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -21,7 +28,8 @@ export default defineConfig({
     lib: {
       entry: fileURLToPath(new URL("./src/index.ts", import.meta.url)),
       name: "ReactVectorPdf",
-      fileName: (format) => `react-vector-pdf.${format}.js`,
+      fileName: "react-vector-pdf",
+      formats: ["es"],
     },
     rollupOptions: {
       external: ["react", "react-dom", "jspdf"],

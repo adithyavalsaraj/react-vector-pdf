@@ -12,8 +12,8 @@
   },
   "homepage": "https://github.com/adithyavalsaraj/react-vector-pdf#readme",
   "type": "module",
-  "main": "./dist/react-vector-pdf.umd.js",
-  "module": "./dist/react-vector-pdf.es.js",
+  "main": "./dist/react-vector-pdf.js",
+  "module": "./dist/react-vector-pdf.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
@@ -21,8 +21,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/react-vector-pdf.es.js",
-      "require": "./dist/react-vector-pdf.umd.js"
+      "import": "./dist/react-vector-pdf.js",
+      "require": "./dist/react-vector-pdf.js"
     }
   },
   "scripts": {
