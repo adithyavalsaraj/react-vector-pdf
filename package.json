@@ -3,6 +3,14 @@
   "version": "0.3.1",
   "private": false,
   "description": "Vector (text-selectable) PDF engine with React UI to configure page numbers, formats, scopes, and center labels. Powered by jsPDF.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adithyavalsaraj/react-vector-pdf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adithyavalsaraj/react-vector-pdf/issues"
+  },
+  "homepage": "https://github.com/adithyavalsaraj/react-vector-pdf#readme",
   "type": "module",
   "main": "./dist/react-vector-pdf.umd.js",
   "module": "./dist/react-vector-pdf.es.js",

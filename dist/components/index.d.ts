@@ -1,5 +1,7 @@
-export { PdfDocument } from './PdfProvider';
-export { PdfText } from './PdfText';
 export { PdfBox } from './PdfBox';
 export { PdfImage } from './PdfImage';
+export { PdfList } from './PdfList';
+export { PdfDocument } from './PdfProvider';
 export { PdfTable } from './PdfTable';
+export { PdfText } from './PdfText';
+export { PdfView } from './PdfView';

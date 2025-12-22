@@ -1,9 +1,9 @@
-export type PDFFormat = 'a4' | 'letter' | [number, number];
-export type Align = 'left' | 'center' | 'right' | 'justify';
+export type PDFFormat = "a4" | "letter" | [number, number];
+export type Align = "left" | "center" | "right" | "justify";
 export interface PDFOptions {
     format?: PDFFormat;
-    orientation?: 'p' | 'l';
-    unit?: 'mm' | 'pt';
+    orientation?: "p" | "l";
+    unit?: "mm" | "pt";
     margin?: {
         top: number;
         right: number;
@@ -12,7 +12,7 @@ export interface PDFOptions {
     };
     font?: {
         name?: string;
-        style?: 'normal' | 'bold' | 'italic' | 'bolditalic';
+        style?: "normal" | "bold" | "italic" | "bolditalic";
         size?: number;
     };
     color?: string;
@@ -20,9 +20,10 @@ export interface PDFOptions {
 }
 export interface TextStyle {
     fontSize?: number;
-    fontStyle?: 'normal' | 'bold' | 'italic' | 'bolditalic';
+    fontStyle?: "normal" | "bold" | "italic" | "bolditalic";
     color?: string;
     align?: Align;
+    verticalAlign?: "top" | "middle" | "bottom";
     lineHeight?: number;
 }
 export interface BoxStyle {
@@ -36,25 +37,43 @@ export interface BoxStyle {
         bottom?: number;
         left?: number;
     };
+    paddingTop?: number;
+    paddingRight?: number;
+    paddingBottom?: number;
+    paddingLeft?: number;
 }
-export type PageNumberPreset = 'page-slash-total' | 'slash' | 'page-of-total';
+export interface ViewStyle extends BoxStyle {
+    margin?: number | {
+        top?: number;
+        right?: number;
+        bottom?: number;
+        left?: number;
+    };
+    marginTop?: number;
+    marginRight?: number;
+    marginBottom?: number;
+    marginLeft?: number;
+    width?: number | string;
+    height?: number;
+}
+export type PageNumberPreset = "page-slash-total" | "slash" | "page-of-total";
 export interface PageNumberOptions {
     enabled?: boolean;
-    position?: 'header' | 'footer';
-    align?: 'left' | 'right' | 'center';
+    position?: "header" | "footer";
+    align?: "left" | "right" | "center";
     preset?: PageNumberPreset;
     template?: string;
     y?: number;
     offsetX?: number;
     style?: TextStyle;
-    scope?: 'all' | 'first-only' | 'except-first';
-    format?: 'arabic' | 'roman-upper' | 'roman-lower';
+    scope?: "all" | "first-only" | "except-first";
+    format?: "arabic" | "roman-upper" | "roman-lower";
 }
 export interface CenterLabelOptions {
     enabled?: boolean;
-    position?: 'header' | 'footer';
+    position?: "header" | "footer";
     text: string;
-    scope?: 'all' | 'first-only' | 'except-first' | number[];
+    scope?: "all" | "first-only" | "except-first" | number[];
     y?: number;
     offsetX?: number;
     style?: TextStyle;
