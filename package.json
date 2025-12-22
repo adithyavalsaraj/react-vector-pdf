@@ -1,0 +1,55 @@
+{
+  "name": "react-vector-pdf",
+  "version": "0.3.1",
+  "private": false,
+  "description": "Vector (text-selectable) PDF engine with React UI to configure page numbers, formats, scopes, and center labels. Powered by jsPDF.",
+  "type": "module",
+  "main": "./dist/react-vector-pdf.umd.js",
+  "module": "./dist/react-vector-pdf.es.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/react-vector-pdf.es.js",
+      "require": "./dist/react-vector-pdf.umd.js"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "pdf",
+    "jsPDF",
+    "vector",
+    "react",
+    "typescript",
+    "text-selectable",
+    "page numbers",
+    "roman numerals"
+  ],
+  "author": "Adithya Valsaraj",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "jspdf": "^3.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "baseline-browser-mapping": "^2.9.11",
+    "sass": "^1.97.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
