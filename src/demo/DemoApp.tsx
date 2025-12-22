@@ -584,7 +584,15 @@ export const DemoApp: React.FC = () => {
 </PdfText>`}
         />
 
-        <h4>2. PdfTable</h4>
+        <h4>2. PdfPreview</h4>
+        <p>Embeds a PDF preview iframe. (Requires wrapping children)</p>
+        <CodeBlock
+          code={`<PdfPreview width="100%" height={500}>
+  <PdfText>Content...</PdfText>
+</PdfPreview>`}
+        />
+
+        <h4>3. PdfTable</h4>
         <p>Robust table with spanning and smart breaking.</p>
         <ul className="list-disc pl-5 mb-2">
           <li>
@@ -623,7 +631,7 @@ export const DemoApp: React.FC = () => {
 />`}
         />
 
-        <h4>3. PdfList</h4>
+        <h4>4. PdfList</h4>
         <p>Renders bullet or numbered lists.</p>
         <ul className="list-disc pl-5 mb-2">
           <li>
@@ -649,7 +657,7 @@ export const DemoApp: React.FC = () => {
 />`}
         />
 
-        <h4>4. PdfImage</h4>
+        <h4>5. PdfImage</h4>
         <ul className="list-disc pl-5 mb-2">
           <li>
             <code>src</code> (string): URL or base64.
@@ -669,7 +677,7 @@ export const DemoApp: React.FC = () => {
         </ul>
         <CodeBlock code={`<PdfImage src="..." align="center" h={30} />`} />
 
-        <h4>5. PdfView & PdfBox</h4>
+        <h4>6. PdfView & PdfBox</h4>
         <p>Containers for grouping and styling.</p>
         <ul className="list-disc pl-5 mb-2">
           <li>
