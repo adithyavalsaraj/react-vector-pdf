@@ -1,6 +1,6 @@
 {
   "name": "react-vector-pdf",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "private": false,
   "description": "Vector (text-selectable) PDF engine with React UI to configure page numbers, formats, scopes, and center labels. Powered by jsPDF.",
   "repository": {
