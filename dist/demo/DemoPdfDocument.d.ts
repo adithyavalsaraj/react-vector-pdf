@@ -1,4 +1,10 @@
 import { default as React } from 'react';
+export interface DemoPdfContentProps {
+    tableHeaderColor: string;
+    tableStriped: boolean;
+    tableBorderWidth: string;
+}
+export declare const DemoPdfContent: React.FC<DemoPdfContentProps>;
 export interface DemoPdfProps {
     pnEnabled: boolean;
     pnPos: "header" | "footer";

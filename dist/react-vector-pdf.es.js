@@ -1,22 +1,22 @@
-import A, { createContext as st, useContext as at } from "react";
-import { jsPDF as ft } from "jspdf";
-var J = { exports: {} }, $ = {};
-var tt;
-function ct() {
-  if (tt) return $;
-  tt = 1;
+import A, { createContext as at, useContext as ft, useState as ct } from "react";
+import { jsPDF as tt } from "jspdf";
+var Q = { exports: {} }, $ = {};
+var et;
+function lt() {
+  if (et) return $;
+  et = 1;
   var i = /* @__PURE__ */ Symbol.for("react.transitional.element"), t = /* @__PURE__ */ Symbol.for("react.fragment");
   function r(n, o, s) {
-    var f = null;
-    if (s !== void 0 && (f = "" + s), o.key !== void 0 && (f = "" + o.key), "key" in o) {
+    var a = null;
+    if (s !== void 0 && (a = "" + s), o.key !== void 0 && (a = "" + o.key), "key" in o) {
       s = {};
-      for (var l in o)
-        l !== "key" && (s[l] = o[l]);
+      for (var c in o)
+        c !== "key" && (s[c] = o[c]);
     } else s = o;
     return o = s.ref, {
       $$typeof: i,
       type: n,
-      key: f,
+      key: a,
       ref: o !== void 0 ? o : null,
       props: s
     };
@@ -24,24 +24,24 @@ function ct() {
   return $.Fragment = t, $.jsx = r, $.jsxs = r, $;
 }
 var V = {};
-var et;
-function lt() {
-  return et || (et = 1, process.env.NODE_ENV !== "production" && (function() {
+var rt;
+function ut() {
+  return rt || (rt = 1, process.env.NODE_ENV !== "production" && (function() {
     function i(e) {
       if (e == null) return null;
       if (typeof e == "function")
         return e.$$typeof === S ? null : e.displayName || e.name || null;
       if (typeof e == "string") return e;
       switch (e) {
-        case u:
+        case h:
           return "Fragment";
-        case M:
+        case X:
           return "Profiler";
         case O:
           return "StrictMode";
-        case G:
+        case J:
           return "Suspense";
-        case m:
+        case b:
           return "SuspenseList";
         case W:
           return "Activity";
@@ -50,21 +50,21 @@ function lt() {
         switch (typeof e.tag == "number" && console.error(
           "Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."
         ), e.$$typeof) {
-          case C:
+          case E:
             return "Portal";
-          case B:
+          case U:
             return e.displayName || "Context";
           case N:
             return (e._context.displayName || "Context") + ".Consumer";
-          case X:
-            var c = e.render;
-            return e = e.displayName, e || (e = c.displayName || c.name || "", e = e !== "" ? "ForwardRef(" + e + ")" : "ForwardRef"), e;
-          case v:
-            return c = e.displayName || null, c !== null ? c : i(e.type) || "Memo";
+          case B:
+            var l = e.render;
+            return e = e.displayName, e || (e = l.displayName || l.name || "", e = e !== "" ? "ForwardRef(" + e + ")" : "ForwardRef"), e;
+          case R:
+            return l = e.displayName || null, l !== null ? l : i(e.type) || "Memo";
           case P:
-            c = e._payload, e = e._init;
+            l = e._payload, e = e._init;
             try {
-              return i(e(c));
+              return i(e(l));
             } catch {
             }
         }
@@ -76,27 +76,27 @@ function lt() {
     function r(e) {
       try {
         t(e);
-        var c = !1;
+        var l = !1;
       } catch {
-        c = !0;
+        l = !0;
       }
-      if (c) {
-        c = console;
-        var d = c.error, T = typeof Symbol == "function" && Symbol.toStringTag && e[Symbol.toStringTag] || e.constructor.name || "Object";
-        return d.call(
-          c,
+      if (l) {
+        l = console;
+        var g = l.error, C = typeof Symbol == "function" && Symbol.toStringTag && e[Symbol.toStringTag] || e.constructor.name || "Object";
+        return g.call(
+          l,
           "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
-          T
+          C
         ), t(e);
       }
     }
     function n(e) {
-      if (e === u) return "<>";
+      if (e === h) return "<>";
       if (typeof e == "object" && e !== null && e.$$typeof === P)
         return "<...>";
       try {
-        var c = i(e);
-        return c ? "<" + c + ">" : "<...>";
+        var l = i(e);
+        return l ? "<" + l + ">" : "<...>";
       } catch {
         return "<...>";
       }
@@ -108,42 +108,42 @@ function lt() {
     function s() {
       return Error("react-stack-top-frame");
     }
-    function f(e) {
+    function a(e) {
       if (D.call(e, "key")) {
-        var c = Object.getOwnPropertyDescriptor(e, "key").get;
-        if (c && c.isReactWarning) return !1;
+        var l = Object.getOwnPropertyDescriptor(e, "key").get;
+        if (l && l.isReactWarning) return !1;
       }
       return e.key !== void 0;
     }
-    function l(e, c) {
-      function d() {
-        E || (E = !0, console.error(
+    function c(e, l) {
+      function g() {
+        T || (T = !0, console.error(
           "%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)",
-          c
+          l
         ));
       }
-      d.isReactWarning = !0, Object.defineProperty(e, "key", {
-        get: d,
+      g.isReactWarning = !0, Object.defineProperty(e, "key", {
+        get: g,
         configurable: !0
       });
     }
-    function g() {
+    function u() {
       var e = i(this.type);
-      return b[e] || (b[e] = !0, console.error(
+      return w[e] || (w[e] = !0, console.error(
         "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."
       )), e = this.props.ref, e !== void 0 ? e : null;
     }
-    function x(e, c, d, T, L, _) {
-      var k = d.ref;
+    function m(e, l, g, C, L, _) {
+      var y = g.ref;
       return e = {
         $$typeof: j,
         type: e,
-        key: c,
-        props: d,
-        _owner: T
-      }, (k !== void 0 ? k : null) !== null ? Object.defineProperty(e, "ref", {
+        key: l,
+        props: g,
+        _owner: C
+      }, (y !== void 0 ? y : null) !== null ? Object.defineProperty(e, "ref", {
         enumerable: !1,
-        get: g
+        get: u
       }) : Object.defineProperty(e, "ref", { enumerable: !1, value: null }), e._store = {}, Object.defineProperty(e._store, "validated", {
         configurable: !1,
         enumerable: !1,
@@ -166,61 +166,61 @@ function lt() {
         value: _
       }), Object.freeze && (Object.freeze(e.props), Object.freeze(e)), e;
     }
-    function a(e, c, d, T, L, _) {
-      var k = c.children;
-      if (k !== void 0)
-        if (T)
-          if (Y(k)) {
-            for (T = 0; T < k.length; T++)
-              R(k[T]);
-            Object.freeze && Object.freeze(k);
+    function f(e, l, g, C, L, _) {
+      var y = l.children;
+      if (y !== void 0)
+        if (C)
+          if (Y(y)) {
+            for (C = 0; C < y.length; C++)
+              x(y[C]);
+            Object.freeze && Object.freeze(y);
           } else
             console.error(
               "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
             );
-        else R(k);
-      if (D.call(c, "key")) {
-        k = i(e);
-        var I = Object.keys(c).filter(function(it) {
-          return it !== "key";
+        else x(y);
+      if (D.call(l, "key")) {
+        y = i(e);
+        var M = Object.keys(l).filter(function(st) {
+          return st !== "key";
         });
-        T = 0 < I.length ? "{key: someKey, " + I.join(": ..., ") + ": ...}" : "{key: someKey}", F[k + T] || (I = 0 < I.length ? "{" + I.join(": ..., ") + ": ...}" : "{}", console.error(
+        C = 0 < M.length ? "{key: someKey, " + M.join(": ..., ") + ": ...}" : "{key: someKey}", F[y + C] || (M = 0 < M.length ? "{" + M.join(": ..., ") + ": ...}" : "{}", console.error(
           `A props object containing a "key" prop is being spread into JSX:
   let props = %s;
   <%s {...props} />
 React keys must be passed directly to JSX without using spread:
   let props = %s;
   <%s key={someKey} {...props} />`,
-          T,
-          k,
-          I,
-          k
-        ), F[k + T] = !0);
+          C,
+          y,
+          M,
+          y
+        ), F[y + C] = !0);
       }
-      if (k = null, d !== void 0 && (r(d), k = "" + d), f(c) && (r(c.key), k = "" + c.key), "key" in c) {
-        d = {};
-        for (var K in c)
-          K !== "key" && (d[K] = c[K]);
-      } else d = c;
-      return k && l(
-        d,
+      if (y = null, g !== void 0 && (r(g), y = "" + g), a(l) && (r(l.key), y = "" + l.key), "key" in l) {
+        g = {};
+        for (var K in l)
+          K !== "key" && (g[K] = l[K]);
+      } else g = l;
+      return y && c(
+        g,
         typeof e == "function" ? e.displayName || e.name || "Unknown" : e
-      ), x(
+      ), m(
         e,
-        k,
-        d,
+        y,
+        g,
         o(),
         L,
         _
       );
     }
-    function R(e) {
-      h(e) ? e._store && (e._store.validated = 1) : typeof e == "object" && e !== null && e.$$typeof === P && (e._payload.status === "fulfilled" ? h(e._payload.value) && e._payload.value._store && (e._payload.value._store.validated = 1) : e._store && (e._store.validated = 1));
+    function x(e) {
+      d(e) ? e._store && (e._store.validated = 1) : typeof e == "object" && e !== null && e.$$typeof === P && (e._payload.status === "fulfilled" ? d(e._payload.value) && e._payload.value._store && (e._payload.value._store.validated = 1) : e._store && (e._store.validated = 1));
     }
-    function h(e) {
+    function d(e) {
       return typeof e == "object" && e !== null && e.$$typeof === j;
     }
-    var H = A, j = /* @__PURE__ */ Symbol.for("react.transitional.element"), C = /* @__PURE__ */ Symbol.for("react.portal"), u = /* @__PURE__ */ Symbol.for("react.fragment"), O = /* @__PURE__ */ Symbol.for("react.strict_mode"), M = /* @__PURE__ */ Symbol.for("react.profiler"), N = /* @__PURE__ */ Symbol.for("react.consumer"), B = /* @__PURE__ */ Symbol.for("react.context"), X = /* @__PURE__ */ Symbol.for("react.forward_ref"), G = /* @__PURE__ */ Symbol.for("react.suspense"), m = /* @__PURE__ */ Symbol.for("react.suspense_list"), v = /* @__PURE__ */ Symbol.for("react.memo"), P = /* @__PURE__ */ Symbol.for("react.lazy"), W = /* @__PURE__ */ Symbol.for("react.activity"), S = /* @__PURE__ */ Symbol.for("react.client.reference"), p = H.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, D = Object.prototype.hasOwnProperty, Y = Array.isArray, z = console.createTask ? console.createTask : function() {
+    var H = A, j = /* @__PURE__ */ Symbol.for("react.transitional.element"), E = /* @__PURE__ */ Symbol.for("react.portal"), h = /* @__PURE__ */ Symbol.for("react.fragment"), O = /* @__PURE__ */ Symbol.for("react.strict_mode"), X = /* @__PURE__ */ Symbol.for("react.profiler"), N = /* @__PURE__ */ Symbol.for("react.consumer"), U = /* @__PURE__ */ Symbol.for("react.context"), B = /* @__PURE__ */ Symbol.for("react.forward_ref"), J = /* @__PURE__ */ Symbol.for("react.suspense"), b = /* @__PURE__ */ Symbol.for("react.suspense_list"), R = /* @__PURE__ */ Symbol.for("react.memo"), P = /* @__PURE__ */ Symbol.for("react.lazy"), W = /* @__PURE__ */ Symbol.for("react.activity"), S = /* @__PURE__ */ Symbol.for("react.client.reference"), p = H.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, D = Object.prototype.hasOwnProperty, Y = Array.isArray, z = console.createTask ? console.createTask : function() {
       return null;
     };
     H = {
@@ -228,42 +228,42 @@ React keys must be passed directly to JSX without using spread:
         return e();
       }
     };
-    var E, b = {}, y = H.react_stack_bottom_frame.bind(
+    var T, w = {}, k = H.react_stack_bottom_frame.bind(
       H,
       s
-    )(), w = z(n(s)), F = {};
-    V.Fragment = u, V.jsx = function(e, c, d) {
-      var T = 1e4 > p.recentlyCreatedOwnerStacks++;
-      return a(
+    )(), v = z(n(s)), F = {};
+    V.Fragment = h, V.jsx = function(e, l, g) {
+      var C = 1e4 > p.recentlyCreatedOwnerStacks++;
+      return f(
         e,
-        c,
-        d,
+        l,
+        g,
         !1,
-        T ? Error("react-stack-top-frame") : y,
-        T ? z(n(e)) : w
+        C ? Error("react-stack-top-frame") : k,
+        C ? z(n(e)) : v
       );
-    }, V.jsxs = function(e, c, d) {
-      var T = 1e4 > p.recentlyCreatedOwnerStacks++;
-      return a(
+    }, V.jsxs = function(e, l, g) {
+      var C = 1e4 > p.recentlyCreatedOwnerStacks++;
+      return f(
         e,
-        c,
-        d,
+        l,
+        g,
         !0,
-        T ? Error("react-stack-top-frame") : y,
-        T ? z(n(e)) : w
+        C ? Error("react-stack-top-frame") : k,
+        C ? z(n(e)) : v
       );
     };
   })()), V;
 }
-var rt;
-function ut() {
-  return rt || (rt = 1, process.env.NODE_ENV === "production" ? J.exports = ct() : J.exports = lt()), J.exports;
+var ot;
+function ht() {
+  return ot || (ot = 1, process.env.NODE_ENV === "production" ? Q.exports = lt() : Q.exports = ut()), Q.exports;
 }
-var U = ut();
+var I = ht();
 function Z(i) {
   return !i && i !== 0 ? { top: 0, right: 0, bottom: 0, left: 0 } : typeof i == "number" ? { top: i, right: i, bottom: i, left: i } : { top: i.top ?? 0, right: i.right ?? 0, bottom: i.bottom ?? 0, left: i.left ?? 0 };
 }
-function Q(i) {
+function G(i) {
   const t = i.replace("#", "");
   if (t.length === 3) {
     const r = parseInt(t[0] + t[0], 16), n = parseInt(t[1] + t[1], 16), o = parseInt(t[2] + t[2], 16);
@@ -275,7 +275,7 @@ function Q(i) {
   }
   return null;
 }
-function ot(i, t = !0) {
+function nt(i, t = !0) {
   if (i <= 0) return String(i);
   const r = [
     [1e3, "M"],
@@ -293,22 +293,22 @@ function ot(i, t = !0) {
     [1, "I"]
   ];
   let n = i, o = "";
-  for (const [s, f] of r)
+  for (const [s, a] of r)
     for (; n >= s; )
-      o += f, n -= s;
+      o += a, n -= s;
   return t ? o : o.toLowerCase();
 }
-class ht {
+class dt {
   constructor(t = {}) {
     this.cursorX = 0, this.cursorY = 0, this.contentWidth = 0, this.margin = { top: 15, right: 15, bottom: 15, left: 15 }, this.defaultFont = {
       name: void 0,
       style: "normal",
       size: 12
-    }, this.defaultColor = "#111827", this.defaultLineHeight = 1.25, this.pendingTasks = /* @__PURE__ */ new Set(), this.opQueue = Promise.resolve(), this.margin = t.margin ?? this.margin, this.defaultFont = {
+    }, this.defaultColor = "#111827", this.defaultLineHeight = 1.25, this.pendingTasks = /* @__PURE__ */ new Set(), this.opQueue = Promise.resolve(), this.generation = 0, this.options = t, this.margin = t.margin ?? this.margin, this.defaultFont = {
       name: t.font?.name,
       style: t.font?.style ?? "normal",
       size: t.font?.size ?? 12
-    }, this.defaultColor = t.color ?? this.defaultColor, this.defaultLineHeight = t.lineHeight ?? this.defaultLineHeight, this.pdf = new ft({
+    }, this.defaultColor = t.color ?? this.defaultColor, this.defaultLineHeight = t.lineHeight ?? this.defaultLineHeight, this.pdf = new tt({
       unit: t.unit ?? "mm",
       format: t.format ?? "a4",
       orientation: t.orientation ?? "p"
@@ -350,13 +350,23 @@ class ht {
   resetFlowCursor() {
     this.cursorX = this.margin.left, this.cursorY = this.margin.top, this.contentWidth = this.pageWidth - this.margin.left - this.margin.right;
   }
+  reset() {
+    if (this.pdf = new tt({
+      unit: this.options.unit ?? "mm",
+      format: this.options.format ?? "a4",
+      orientation: this.options.orientation ?? "p"
+    }), this.generation++, this.cursorX = 0, this.cursorY = 0, this.pendingTasks = /* @__PURE__ */ new Set(), this.opQueue = Promise.resolve(), this.resetFlowCursor(), this.applyBaseFont(), this.options.color) {
+      const t = G(this.options.color);
+      t && this.pdf.setTextColor(...t);
+    }
+  }
   setHeaderFooter(t, r) {
     this.headerDrawer = t, this.footerDrawer = r;
   }
   applyBaseFont() {
     const t = this.defaultFont.name ?? this.pdf.getFont().fontName;
     this.pdf.setFont(t, this.defaultFont.style), this.pdf.setFontSize(this.defaultFont.size);
-    const r = Q(this.defaultColor);
+    const r = G(this.defaultColor);
     r && this.pdf.setTextColor(...r);
   }
   addPage() {
@@ -372,26 +382,26 @@ class ht {
         this.pdf.setFont(r, t.fontStyle);
       }
       if (t.color) {
-        const r = Q(t.color);
+        const r = G(t.color);
         r && this.pdf.setTextColor(...r);
       }
     }
   }
-  textRaw(t, r, n, o, s, f = "left") {
+  textRaw(t, r, n, o, s, a = "left") {
     this.setTextStyle(o);
-    const l = { align: f };
-    typeof s == "number" && (l.maxWidth = s), this.pdf.text(t, r, n, l), this.applyBaseFont();
+    const c = { align: a };
+    typeof s == "number" && (c.maxWidth = s), this.pdf.text(t, r, n, c), this.applyBaseFont();
   }
   box(t, r, n, o, s) {
-    const f = s ?? {};
-    if (f.fillColor) {
-      const l = Q(f.fillColor);
-      l && this.pdf.setFillColor(...l), this.pdf.rect(t, r, n, o, "F");
+    const a = s ?? {};
+    if (a.fillColor) {
+      const c = G(a.fillColor);
+      c && this.pdf.setFillColor(...c), this.pdf.rect(t, r, n, o, "F");
     }
-    if (f.borderWidth || f.borderColor) {
-      if (f.borderWidth && this.pdf.setLineWidth(f.borderWidth), f.borderColor) {
-        const l = Q(f.borderColor);
-        l && this.pdf.setDrawColor(...l);
+    if (a.borderWidth || a.borderColor) {
+      if (a.borderWidth && this.pdf.setLineWidth(a.borderWidth), a.borderColor) {
+        const c = G(a.borderColor);
+        c && this.pdf.setDrawColor(...c);
       }
       this.pdf.rect(t, r, n, o), this.pdf.setLineWidth(0.2), this.pdf.setDrawColor(0, 0, 0);
     }
@@ -402,23 +412,23 @@ class ht {
   async imageFromUrl(t, r = {}) {
     const n = (async () => {
       try {
-        const { dataUrl: o, width: s, height: f } = await this.loadImageAsDataURL(t), l = 0.264583, g = s * l, x = f * l;
-        let a = r.w, R = r.h;
-        a === void 0 && R === void 0 ? (a = g, R = x) : a === void 0 && R !== void 0 ? a = R * (g / x) : R === void 0 && a !== void 0 && (R = a * (x / g));
-        const h = a ?? g, H = R ?? x;
-        let j = r.x, C = r.y ?? this.cursorY;
-        if (r.y === void 0 && C + H > this.contentBottom && (this.addPage(), C = this.cursorY), j === void 0) {
-          const u = r.align ?? "left";
-          u === "left" ? j = this.contentLeft : u === "center" ? j = (this.contentLeft + this.contentRight) / 2 - h / 2 : u === "right" && (j = this.contentRight - h);
+        const { dataUrl: o, width: s, height: a } = await this.loadImageAsDataURL(t), c = 0.264583, u = s * c, m = a * c;
+        let f = r.w, x = r.h;
+        f === void 0 && x === void 0 ? (f = u, x = m) : f === void 0 && x !== void 0 ? f = x * (u / m) : x === void 0 && f !== void 0 && (x = f * (m / u));
+        const d = f ?? u, H = x ?? m;
+        let j = r.x, E = r.y ?? this.cursorY;
+        if (r.y === void 0 && E + H > this.contentBottom && (this.addPage(), E = this.cursorY), j === void 0) {
+          const h = r.align ?? "left";
+          h === "left" ? j = this.contentLeft : h === "center" ? j = (this.contentLeft + this.contentRight) / 2 - d / 2 : h === "right" && (j = this.contentRight - d);
         }
         return this.pdf.addImage(
           o,
           r.mime ?? "PNG",
           j,
-          C,
-          h,
+          E,
+          d,
           H
-        ), { width: h, height: H, x: j, y: C };
+        ), { width: d, height: H, x: j, y: E };
       } catch (o) {
         return console.error("Failed to load image", t, o), { width: 0, height: 0, x: 0, y: 0 };
       }
@@ -426,14 +436,15 @@ class ht {
     return this.registerTask(n), n;
   }
   queueOperation(t) {
-    const r = this.opQueue.then(async () => {
-      try {
-        await t();
-      } catch (n) {
-        console.error("Operation failed", n);
-      }
+    const r = this.generation, n = this.opQueue.then(async () => {
+      if (this.generation === r)
+        try {
+          await t();
+        } catch (o) {
+          console.error("Operation failed", o);
+        }
     });
-    this.opQueue = r, this.registerTask(r);
+    this.opQueue = n, this.registerTask(n);
   }
   registerTask(t) {
     this.pendingTasks.add(t), t.finally(() => {
@@ -449,9 +460,9 @@ class ht {
       o.crossOrigin = "anonymous", o.onload = () => {
         const s = document.createElement("canvas");
         s.width = o.width, s.height = o.height;
-        const f = s.getContext("2d");
-        if (!f) return n(new Error("Canvas 2D context not available"));
-        f.drawImage(o, 0, 0), r({
+        const a = s.getContext("2d");
+        if (!a) return n(new Error("Canvas 2D context not available"));
+        a.drawImage(o, 0, 0), r({
           dataUrl: s.toDataURL("image/png"),
           width: o.width,
           height: o.height
@@ -462,13 +473,13 @@ class ht {
   paragraph(t, r, n) {
     const o = n ?? this.contentWidth;
     this.setTextStyle(r);
-    const s = r?.lineHeight ?? this.defaultLineHeight, f = r?.fontSize ?? this.defaultFont.size, l = f * s * 0.3528, g = this.pdf.splitTextToSize(t, o), x = r?.align ?? "left";
-    let a = 0;
-    return g.forEach((R) => {
-      this.cursorY + l > this.contentBottom && this.addPage();
-      const h = this.cursorY + f * 0.3528;
-      this.pdf.text(R, this.cursorX, h, { align: x, maxWidth: o }), this.cursorY += l, a += l;
-    }), this.cursorY += 1, this.applyBaseFont(), a;
+    const s = r?.lineHeight ?? this.defaultLineHeight, a = r?.fontSize ?? this.defaultFont.size, c = a * s * 0.3528, u = this.pdf.splitTextToSize(t, o), m = r?.align ?? "left";
+    let f = 0;
+    return u.forEach((x) => {
+      this.cursorY + c > this.contentBottom && this.addPage();
+      const d = this.cursorY + a * 0.3528;
+      this.pdf.text(x, this.cursorX, d, { align: m, maxWidth: o }), this.cursorY += c, f += c;
+    }), this.cursorY += 1, this.applyBaseFont(), f;
   }
   moveCursor(t, r) {
     this.cursorX += t, this.cursorY += r;
@@ -492,16 +503,16 @@ class ht {
   }
   measureText(t, r, n) {
     this.setTextStyle(r);
-    const o = r?.fontSize ?? this.defaultFont.size, s = r?.lineHeight ?? this.defaultLineHeight, f = o * s * 0.3528;
+    const o = r?.fontSize ?? this.defaultFont.size, s = r?.lineHeight ?? this.defaultLineHeight, a = o * s * 0.3528;
     if (n) {
-      const l = this.pdf.splitTextToSize(t, n);
+      const c = this.pdf.splitTextToSize(t, n);
       return {
         width: n,
-        height: l.length * f
+        height: c.length * a
       };
     } else {
-      const l = this.pdf.getTextDimensions(t);
-      return { width: l.w, height: l.h };
+      const c = this.pdf.getTextDimensions(t);
+      return { width: c.w, height: c.h };
     }
   }
   setMetadata(t) {
@@ -512,57 +523,62 @@ class ht {
   save(t) {
     this.applyHeaderFooter(), this.pdf.save(t);
   }
+  getBlobUrl() {
+    return this.applyHeaderFooter(), this.pdf.output("bloburl");
+  }
 }
-const nt = st(null), q = () => {
-  const i = at(nt);
+const it = at(null), q = () => {
+  const i = ft(it);
   if (!i) throw new Error("usePdf must be used within <PdfDocument>");
   return i;
-}, wt = ({
+}, gt = ({
   options: i,
   header: t,
   footer: r,
   pageNumbers: n,
   centerLabel: o,
   metadata: s,
-  children: f,
-  onReady: l,
-  filename: g,
-  autoSave: x = !1
+  children: a,
+  onReady: c,
+  filename: u,
+  autoSave: m = !1
 }) => {
-  const [a] = A.useState(() => new ht(i));
+  const f = A.useMemo(() => new dt(i), [i]);
   return A.useEffect(() => {
-    s && a.setMetadata(s);
-  }, [a, s]), A.useEffect(() => {
-    const R = (C, u) => !u || u === "all" ? !0 : u === "first-only" ? C === 1 : u === "except-first" ? C > 1 : Array.isArray(u) ? u.includes(C) : !0, h = (C, u) => u === "roman-upper" ? ot(C, !0) : u === "roman-lower" ? ot(C, !1) : String(C), H = (C, u, O) => {
-      if (!n?.enabled || !R(u, n.scope)) return;
-      const M = n.preset ?? "page-slash-total", B = (n.template ?? (M === "page-slash-total" ? "Page {page}/{total}" : M === "page-of-total" ? "Page {page} of {total}" : "{page}/{total}")).replace("{page}", h(u, n.format)).replace("{total}", h(O, n.format)), X = n.align ?? "right", G = X === "left" ? a.contentLeft + (n.offsetX ?? 0) : X === "right" ? a.contentRight - (n.offsetX ?? 0) : (a.contentLeft + a.contentRight) / 2 + (n.offsetX ?? 0), m = C === "header" ? 10 : a.height - 7, v = typeof n.y == "number" ? n.y : m;
-      a.textRaw(B, G, v, n.style, void 0, X);
-    }, j = (C, u, O) => {
-      if (!o?.enabled || !R(u, o.scope)) return;
-      const M = "center", N = (a.contentLeft + a.contentRight) / 2 + (o.offsetX ?? 0), B = C === "header" ? 10 : a.height - 7, X = typeof o.y == "number" ? o.y : B;
-      a.textRaw(
+    s && f.setMetadata(s);
+  }, [f, s]), A.useEffect(() => {
+    const x = (E, h) => !h || h === "all" ? !0 : h === "first-only" ? E === 1 : h === "except-first" ? E > 1 : Array.isArray(h) ? h.includes(E) : !0, d = (E, h) => h === "roman-upper" ? nt(E, !0) : h === "roman-lower" ? nt(E, !1) : String(E), H = (E, h, O) => {
+      if (!n?.enabled || !x(h, n.scope)) return;
+      const X = n.preset ?? "page-slash-total", U = (n.template ?? (X === "page-slash-total" ? "Page {page}/{total}" : X === "page-of-total" ? "Page {page} of {total}" : "{page}/{total}")).replace("{page}", d(h, n.format)).replace("{total}", d(O, n.format)), B = n.align ?? "right", J = B === "left" ? f.contentLeft + (n.offsetX ?? 0) : B === "right" ? f.contentRight - (n.offsetX ?? 0) : (f.contentLeft + f.contentRight) / 2 + (n.offsetX ?? 0), b = E === "header" ? 10 : f.height - 7, R = typeof n.y == "number" ? n.y : b;
+      f.textRaw(U, J, R, n.style, void 0, B);
+    }, j = (E, h, O) => {
+      if (!o?.enabled || !x(h, o.scope)) return;
+      const X = "center", N = (f.contentLeft + f.contentRight) / 2 + (o.offsetX ?? 0), U = E === "header" ? 10 : f.height - 7, B = typeof o.y == "number" ? o.y : U;
+      f.textRaw(
         o.text,
         N,
-        X,
+        B,
         o.style,
         void 0,
-        M
+        X
       );
     };
-    a.setHeaderFooter(
-      (C, u, O) => {
-        t && t(a, u, O), n?.position === "header" && H("header", u, O), o?.position === "header" && j("header", u);
+    return f.setHeaderFooter(
+      (E, h, O) => {
+        t && t(f, h, O), n?.position === "header" && H("header", h, O), o?.position === "header" && j("header", h);
       },
-      (C, u, O) => {
-        n?.position === "footer" && H("footer", u, O), r && r(a, u, O), o?.position === "footer" && j("footer", u);
+      (E, h, O) => {
+        n?.position === "footer" && H("footer", h, O), r && r(f, h, O), o?.position === "footer" && j("footer", h);
       }
-    ), a.waitForTasks().then(() => {
-      l?.(a);
-    });
-  }, []), A.useEffect(() => {
-    x && g && a.save(g);
-  }, [x, g]), /* @__PURE__ */ U.jsx(nt.Provider, { value: a, children: f });
-}, vt = ({
+    ), f.waitForTasks().then(() => {
+      c?.(f);
+    }), () => {
+      f.reset();
+    };
+  }, [f]), A.useEffect(() => {
+    m && u && f.save(u);
+  }, [m, u]), /* @__PURE__ */ I.jsx(it.Provider, { value: f, children: a });
+}, xt = ({
   x: i,
   y: t,
   w: r,
@@ -570,65 +586,65 @@ const nt = st(null), q = () => {
   children: o,
   ...s
 }) => {
-  const f = q(), l = Z(s.padding), g = {
-    top: s.paddingTop ?? l.top,
-    right: s.paddingRight ?? l.right,
-    bottom: s.paddingBottom ?? l.bottom,
-    left: s.paddingLeft ?? l.left
-  }, x = A.useRef(
+  const a = q(), c = Z(s.padding), u = {
+    top: s.paddingTop ?? c.top,
+    right: s.paddingRight ?? c.right,
+    bottom: s.paddingBottom ?? c.bottom,
+    left: s.paddingLeft ?? c.left
+  }, m = A.useRef(
     {}
   ).current;
   return typeof i == "number" && typeof t == "number" && typeof r == "number" && typeof n == "number" ? (A.useEffect(() => {
-    f.queueOperation(() => {
-      f.box(i, t, r, n, s);
+    a.queueOperation(() => {
+      a.box(i, t, r, n, s);
     });
-  }, [i, t, r, n]), /* @__PURE__ */ U.jsx(A.Fragment, { children: o })) : (A.useEffect(() => {
-    f.queueOperation(() => {
-      const a = f.getCursor();
-      x.start = { ...a };
-      const R = a.x + g.left, h = a.y + g.top;
-      f.setCursor(R, h);
+  }, [a, i, t, r, n]), /* @__PURE__ */ I.jsx(A.Fragment, { children: o })) : (A.useEffect(() => {
+    a.queueOperation(() => {
+      const f = a.getCursor();
+      m.start = { ...f };
+      const x = f.x + u.left, d = f.y + u.top;
+      a.setCursor(x, d);
     });
-  }, []), /* @__PURE__ */ U.jsxs(A.Fragment, { children: [
+  }, [a]), /* @__PURE__ */ I.jsxs(A.Fragment, { children: [
     o,
-    /* @__PURE__ */ U.jsx(dt, { boxState: x, pad: g, style: s })
+    /* @__PURE__ */ I.jsx(pt, { boxState: m, pad: u, style: s })
   ] }));
-}, dt = ({ boxState: i, style: t, pad: r }) => {
+}, pt = ({ boxState: i, style: t, pad: r }) => {
   const n = q();
   return A.useEffect(() => {
     n.queueOperation(() => {
       const o = i.start;
       if (!o) return;
-      const s = n.getCursor(), l = Math.max(s.y - o.y - r.top, 0) + r.top + r.bottom;
-      n.box(o.x, o.y, n.contentAreaWidth, l, t), n.setCursor(o.x, o.y + l);
+      const s = n.getCursor(), c = Math.max(s.y - o.y - r.top, 0) + r.top + r.bottom;
+      n.box(o.x, o.y, n.contentAreaWidth, c, t), n.setCursor(o.x, o.y + c);
     });
-  }, []), null;
-}, xt = ({
+  }, [n]), null;
+}, Rt = ({
   src: i,
   x: t,
   y: r,
   w: n,
   h: o,
   mime: s = "PNG",
-  flow: f,
-  align: l = "left"
+  flow: a,
+  align: c = "left"
 }) => {
-  const g = q();
+  const u = q();
   return A.useEffect(() => {
-    const x = f === !0 || t === void 0 && r === void 0, a = t, R = r;
-    g.queueOperation(async () => {
-      const h = await g.imageFromUrl(i, {
-        x: a,
-        y: R,
+    const m = a === !0 || t === void 0 && r === void 0, f = t, x = r;
+    u.queueOperation(async () => {
+      const d = await u.imageFromUrl(i, {
+        x: f,
+        y: x,
         w: n,
         h: o,
         mime: s,
-        align: l
+        align: c
       });
-      x && h && g.moveCursor(0, h.height + 2);
+      m && d && u.moveCursor(0, d.height + 2);
     });
-  }, [i, t, r, n, o, s, f, l]), null;
-}, Rt = ({
+  }, [u, i, t, r, n, o, s, a, c]), null;
+}, Tt = ({
   items: i,
   ordered: t = !1,
   style: r,
@@ -636,26 +652,67 @@ const nt = st(null), q = () => {
   markerWidth: o = 5,
   spacing: s = 2
 }) => {
-  const f = q();
+  const a = q();
   return A.useEffect(() => {
-    f.queueOperation(() => {
-      i.forEach((l, g) => {
-        const x = t ? `${g + 1}.` : "•", a = f.getCursor().y, R = f.getCursor().x, h = R + n + o, H = r?.fontSize ?? f.baseFont.size, j = a + H * 0.3528;
-        f.textRaw(
-          x,
-          R + n,
+    a.queueOperation(() => {
+      i.forEach((c, u) => {
+        const m = t ? `${u + 1}.` : "•", f = a.getCursor().y, x = a.getCursor().x, d = x + n + o, H = r?.fontSize ?? a.baseFont.size, j = f + H * 0.3528;
+        a.textRaw(
+          m,
+          x + n,
           j,
           r,
           o,
           "right"
-        ), f.setCursor(h, a);
-        const C = f.contentRight - h;
-        f.paragraph(l, r, C);
-        const u = f.getCursor().y;
-        f.setCursor(R, u + s);
+        ), a.setCursor(d, f);
+        const E = a.contentRight - d;
+        a.paragraph(c, r, E);
+        const h = a.getCursor().y;
+        a.setCursor(x, h + s);
       });
     });
-  }, [i, t, r, n, o, s]), null;
+  }, [a, i, t, r, n, o, s]), null;
+}, Ct = ({
+  width: i = "100%",
+  height: t = "500px",
+  className: r,
+  style: n,
+  iframeClassName: o,
+  iframeStyle: s,
+  ...a
+}) => {
+  const [c, u] = ct(null), m = (f) => {
+    const x = f.getBlobUrl();
+    u(x.toString());
+  };
+  return /* @__PURE__ */ I.jsxs("div", { className: r, style: { width: i, height: t, ...n }, children: [
+    /* @__PURE__ */ I.jsx("div", { style: { display: "none" }, children: /* @__PURE__ */ I.jsx(gt, { ...a, onReady: m, autoSave: !1, children: a.children }) }),
+    c ? /* @__PURE__ */ I.jsx(
+      "iframe",
+      {
+        src: c,
+        width: "100%",
+        height: "100%",
+        className: o,
+        style: { border: "none", ...s },
+        title: "PDF Preview"
+      }
+    ) : /* @__PURE__ */ I.jsx(
+      "div",
+      {
+        style: {
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f3f4f6",
+          color: "#6b7280"
+        },
+        children: "Generating Preview..."
+      }
+    )
+  ] });
 }, Et = ({
   data: i,
   columns: t,
@@ -663,156 +720,156 @@ const nt = st(null), q = () => {
   borderWidth: n = 0.1,
   borderColor: o = "#000000",
   cellPadding: s = 2,
-  headerStyle: f,
-  rowStyle: l,
-  alternateRowStyle: g,
-  headerHeight: x
+  headerStyle: a,
+  rowStyle: c,
+  alternateRowStyle: u,
+  headerHeight: m
 }) => {
-  const a = q();
+  const f = q();
   return A.useEffect(() => {
-    a.queueOperation(() => {
-      const R = typeof r == "number" ? r : parseFloat(r) / 100 * a.contentAreaWidth, h = t.map((m) => typeof m.width == "number" ? m.width : typeof m.width == "string" && m.width.endsWith("%") ? parseFloat(m.width) / 100 * R : 0), H = h.reduce((m, v) => m + v, 0), j = Math.max(0, R - H), C = h.filter((m) => m === 0).length;
-      if (C > 0) {
-        const m = j / C;
-        for (let v = 0; v < h.length; v++)
-          h[v] === 0 && (h[v] = m);
+    f.queueOperation(() => {
+      const x = typeof r == "number" ? r : parseFloat(r) / 100 * f.contentAreaWidth, d = t.map((b) => typeof b.width == "number" ? b.width : typeof b.width == "string" && b.width.endsWith("%") ? parseFloat(b.width) / 100 * x : 0), H = d.reduce((b, R) => b + R, 0), j = Math.max(0, x - H), E = d.filter((b) => b === 0).length;
+      if (E > 0) {
+        const b = j / E;
+        for (let R = 0; R < d.length; R++)
+          d[R] === 0 && (d[R] = b);
       }
-      const u = (m, v, P, W, S, p, D = "left", Y = !0) => {
-        Y && a.box(v, P, W, S, {
+      const h = (b, R, P, W, S, p, D = "left", Y = !0) => {
+        Y && f.box(R, P, W, S, {
           borderColor: p.borderColor ?? o,
           borderWidth: p.borderWidth ?? n,
           fillColor: p.fillColor
         });
-        const z = Z(p.padding ?? s), E = {
+        const z = Z(p.padding ?? s), T = {
           top: p.paddingTop ?? z.top,
           right: p.paddingRight ?? z.right,
           bottom: p.paddingBottom ?? z.bottom,
           left: p.paddingLeft ?? z.left
-        }, b = W - E.left - E.right, y = a.instance.splitTextToSize(m, b, p), w = (p.fontSize ?? a.baseFont.size) * (p.lineHeight ?? a.baseLineHeight) * 0.3528, F = (p.fontSize ?? a.baseFont.size) * 0.3528, e = y.length * w, c = S - E.top - E.bottom;
-        let d = 0;
-        p.verticalAlign === "middle" ? d = Math.max(0, (c - e) / 2) : p.verticalAlign === "bottom" && (d = Math.max(0, c - e));
-        let T = P + E.top + d + F;
-        const L = p.align ?? D, _ = a.getCursor();
-        y.forEach((k) => {
-          let I = v + E.left;
-          L === "center" ? I = v + W / 2 : L === "right" && (I = v + W - E.right), a.textRaw(k, I, T, p, void 0, L), T += w;
-        }), a.setCursor(_.x, _.y);
+        }, w = W - T.left - T.right, k = f.instance.splitTextToSize(b, w, p), v = (p.fontSize ?? f.baseFont.size) * (p.lineHeight ?? f.baseLineHeight) * 0.3528, F = (p.fontSize ?? f.baseFont.size) * 0.3528, e = k.length * v, l = S - T.top - T.bottom;
+        let g = 0;
+        p.verticalAlign === "middle" ? g = Math.max(0, (l - e) / 2) : p.verticalAlign === "bottom" && (g = Math.max(0, l - e));
+        let C = P + T.top + g + F;
+        const L = p.align ?? D, _ = f.getCursor();
+        k.forEach((y) => {
+          let M = R + T.left;
+          L === "center" ? M = R + W / 2 : L === "right" && (M = R + W - T.right), f.textRaw(y, M, C, p, void 0, L), C += v;
+        }), f.setCursor(_.x, _.y);
       };
-      let O = a.getCursor().y;
-      const M = a.getCursor().x, N = x ?? 10;
-      O + N > a.contentBottom && (a.addPage(), O = a.getCursor().y);
-      let B = M;
-      t.forEach((m, v) => {
-        const P = h[v];
-        u(
-          m.header ?? "",
-          B,
+      let O = f.getCursor().y;
+      const X = f.getCursor().x, N = m ?? 10;
+      O + N > f.contentBottom && (f.addPage(), O = f.getCursor().y);
+      let U = X;
+      t.forEach((b, R) => {
+        const P = d[R];
+        h(
+          b.header ?? "",
+          U,
           O,
           P,
           N,
-          f ?? { fontStyle: "bold" },
-          m.align ?? "left"
-        ), B += P;
-      }), O += N, a.setCursor(M, O);
-      const X = (m, v, P) => {
+          a ?? { fontStyle: "bold" },
+          b.align ?? "left"
+        ), U += P;
+      }), O += N, f.setCursor(X, O);
+      const B = (b, R, P) => {
         const W = Z(s), S = {
           top: P.paddingTop ?? W.top,
           right: P.paddingRight ?? W.right,
           bottom: P.paddingBottom ?? W.bottom,
           left: P.paddingLeft ?? W.left
-        }, p = v - S.left - S.right;
-        return a.measureText(m, P, p).height + S.top + S.bottom;
+        }, p = R - S.left - S.right;
+        return f.measureText(b, P, p).height + S.top + S.bottom;
       };
       new Array(t.length).fill(0), (() => {
-        const m = new Array(i.length).fill(0);
+        const b = new Array(i.length).fill(0);
         for (let S = 0; S < i.length; S++) {
           const p = i[S];
           let D = 0;
           for (let Y = 0; Y < t.length; Y++) {
-            const z = t[Y], E = typeof z.accessor == "function" ? z.accessor(p) : p[z.accessor];
-            let b = "", y = l, w = 1, F = 1;
-            if (E && typeof E == "object" && E.content !== void 0 ? (b = String(E.content), E.style && (y = E.style), E.colSpan && (w = E.colSpan), E.rowSpan && (F = E.rowSpan)) : b = String(E ?? ""), F > 1) {
-              Y += w - 1;
+            const z = t[Y], T = typeof z.accessor == "function" ? z.accessor(p) : p[z.accessor];
+            let w = "", k = c, v = 1, F = 1;
+            if (T && typeof T == "object" && T.content !== void 0 ? (w = String(T.content), T.style && (k = T.style), T.colSpan && (v = T.colSpan), T.rowSpan && (F = T.rowSpan)) : w = String(T ?? ""), F > 1) {
+              Y += v - 1;
               continue;
             }
-            let e = h[Y];
-            for (let d = 1; d < w; d++)
-              Y + d < h.length && (e += h[Y + d]);
-            const c = X(b, e, y ?? {});
-            c > D && (D = c), Y += w - 1;
+            let e = d[Y];
+            for (let g = 1; g < v; g++)
+              Y + g < d.length && (e += d[Y + g]);
+            const l = B(w, e, k ?? {});
+            l > D && (D = l), Y += v - 1;
           }
-          D < 8 && (D = 8), m[S] = D;
+          D < 8 && (D = 8), b[S] = D;
         }
-        let v = O;
-        const P = new Array(t.length).fill(0), W = a.getCursor().x;
+        let R = O;
+        const P = new Array(t.length).fill(0), W = f.getCursor().x;
         for (let S = 0; S < i.length; S++) {
-          const p = i[S], D = m[S];
+          const p = i[S], D = b[S];
           let Y = D;
-          for (let b = 0; b < t.length; b++) {
-            const y = t[b], w = typeof y.accessor == "function" ? y.accessor(p) : p[y.accessor];
+          for (let w = 0; w < t.length; w++) {
+            const k = t[w], v = typeof k.accessor == "function" ? k.accessor(p) : p[k.accessor];
             let F = 1;
-            if (w && typeof w == "object" && w.rowSpan && (F = w.rowSpan), F > 1) {
+            if (v && typeof v == "object" && v.rowSpan && (F = v.rowSpan), F > 1) {
               let e = 0;
-              for (let c = 0; c < F; c++)
-                S + c < m.length && (e += m[S + c]);
+              for (let l = 0; l < F; l++)
+                S + l < b.length && (e += b[S + l]);
               e > Y && (Y = e);
             }
           }
-          const z = Math.abs(v - (a.contentTop + (x ?? 10))) < 1;
-          if (v + Y > a.contentBottom && !z && (a.addPage(), v = a.getCursor().y, x !== 0)) {
-            let b = W;
-            t.forEach((y, w) => {
-              const F = h[w];
-              u(
-                y.header ?? "",
-                b,
-                v,
+          const z = Math.abs(R - (f.contentTop + (m ?? 10))) < 1;
+          if (R + Y > f.contentBottom && !z && (f.addPage(), R = f.getCursor().y, m !== 0)) {
+            let w = W;
+            t.forEach((k, v) => {
+              const F = d[v];
+              h(
+                k.header ?? "",
+                w,
+                R,
                 F,
-                x ?? 10,
-                f ?? { fontStyle: "bold" },
-                y.align ?? "left"
-              ), b += F;
-            }), v += x ?? 10;
+                m ?? 10,
+                a ?? { fontStyle: "bold" },
+                k.align ?? "left"
+              ), w += F;
+            }), R += m ?? 10;
           }
-          let E = W;
-          for (let b = 0; b < t.length; b++) {
-            if (P[b] > 0) {
-              P[b]--, E += h[b];
+          let T = W;
+          for (let w = 0; w < t.length; w++) {
+            if (P[w] > 0) {
+              P[w]--, T += d[w];
               continue;
             }
-            const y = t[b], w = typeof y.accessor == "function" ? y.accessor(p) : p[y.accessor];
-            let F = 1, e = 1, c = S % 2 === 1 && g ? g : l, d = "";
-            w && typeof w == "object" && w.content !== void 0 ? (d = String(w.content), w.colSpan && (F = w.colSpan), w.rowSpan && (e = w.rowSpan), w.style && (c = { ...c, ...w.style })) : d = String(w ?? "");
-            let T = h[b];
+            const k = t[w], v = typeof k.accessor == "function" ? k.accessor(p) : p[k.accessor];
+            let F = 1, e = 1, l = S % 2 === 1 && u ? u : c, g = "";
+            v && typeof v == "object" && v.content !== void 0 ? (g = String(v.content), v.colSpan && (F = v.colSpan), v.rowSpan && (e = v.rowSpan), v.style && (l = { ...l, ...v.style })) : g = String(v ?? "");
+            let C = d[w];
             for (let _ = 1; _ < F; _++)
-              b + _ < h.length && (T += h[b + _]);
+              w + _ < d.length && (C += d[w + _]);
             let L = D;
             if (e > 1)
               for (let _ = 1; _ < e; _++)
-                S + _ < m.length && (L += m[S + _]);
-            if (u(
-              d,
-              E,
-              v,
+                S + _ < b.length && (L += b[S + _]);
+            if (h(
+              g,
               T,
+              R,
+              C,
               L,
-              c ?? {},
-              y.align ?? "left",
+              l ?? {},
+              k.align ?? "left",
               !0
             ), e > 1) {
-              P[b] = e - 1;
+              P[w] = e - 1;
               for (let _ = 1; _ < F; _++)
-                b + _ < P.length && (P[b + _] = e - 1);
+                w + _ < P.length && (P[w + _] = e - 1);
             }
-            E += T, b += F - 1;
+            T += C, w += F - 1;
           }
-          v += D;
+          R += D;
         }
-        a.setCursor(W, v);
+        f.setCursor(W, R);
       })();
     });
-  }, [i, t, r]), null;
-}, Tt = ({
+  }, [f, i, t, r]), null;
+}, St = ({
   children: i,
   x: t,
   y: r,
@@ -820,20 +877,29 @@ const nt = st(null), q = () => {
   spacingBelow: o = 2,
   ...s
 }) => {
-  const f = q();
+  const a = q();
   return A.useEffect(() => {
-    f.queueOperation(() => {
+    a.queueOperation(() => {
       if (typeof t == "number" && typeof r == "number")
-        f.textRaw(i, t, r, s, n, s.align);
+        a.textRaw(i, t, r, s, n, s.align);
       else {
-        f.paragraph(i, s, n);
-        const l = f.getCursor();
-        f.setCursor(l.x, l.y + o);
+        a.paragraph(i, s, n);
+        const c = a.getCursor();
+        a.setCursor(c.x, c.y + o);
       }
     });
-  }, [i, t, r, n, o, s.fontSize, s.align]), null;
+  }, [
+    a,
+    i,
+    t,
+    r,
+    n,
+    o,
+    s.fontSize,
+    s.align
+  ]), null;
 };
-function gt(i) {
+function mt(i) {
   return typeof i == "number" ? { top: i, right: i, bottom: i, left: i } : {
     top: i?.top ?? 0,
     right: i?.right ?? 0,
@@ -841,61 +907,62 @@ function gt(i) {
     left: i?.left ?? 0
   };
 }
-const Ct = ({ style: i = {}, children: t }) => {
+const Pt = ({ style: i = {}, children: t }) => {
   const r = q(), n = Z(i.padding), o = {
     top: i.paddingTop ?? n.top,
     right: i.paddingRight ?? n.right,
     bottom: i.paddingBottom ?? n.bottom,
     left: i.paddingLeft ?? n.left
-  }, s = gt(i.margin), f = {
+  }, s = mt(i.margin), a = {
     top: i.marginTop ?? s.top,
     right: i.marginRight ?? s.right,
     bottom: i.marginBottom ?? s.bottom,
     left: i.marginLeft ?? s.left
-  }, l = A.useRef(
+  }, c = A.useRef(
     {}
   ).current;
   return A.useEffect(() => {
     r.queueOperation(() => {
-      f.top > 0 && r.moveCursor(0, f.top);
-      const g = r.getCursor();
-      l.start = { ...g }, r.setCursor(g.x + o.left, g.y + o.top);
+      a.top > 0 && r.moveCursor(0, a.top);
+      const u = r.getCursor();
+      c.start = { ...u }, r.setCursor(u.x + o.left, u.y + o.top);
     });
-  }, []), /* @__PURE__ */ U.jsxs(A.Fragment, { children: [
+  }, [r]), /* @__PURE__ */ I.jsxs(A.Fragment, { children: [
     t,
-    /* @__PURE__ */ U.jsx(
-      pt,
+    /* @__PURE__ */ I.jsx(
+      bt,
       {
-        viewState: l,
+        viewState: c,
         style: i,
         pad: o,
-        margin: f
+        margin: a
       }
     )
   ] });
-}, pt = ({ viewState: i, style: t, pad: r, margin: n }) => {
+}, bt = ({ viewState: i, style: t, pad: r, margin: n }) => {
   const o = q();
   return A.useEffect(() => {
     o.queueOperation(() => {
       const s = i.start;
       if (!s) return;
-      const f = o.getCursor();
-      let g = Math.max(f.y - s.y - r.top, 0) + r.top + r.bottom;
-      t.height && (g = t.height);
-      let x = o.contentAreaWidth;
-      typeof t.width == "number" && (x = t.width), (t.borderColor || t.fillColor || t.borderWidth) && o.box(s.x, s.y, x, g, t);
-      const a = s.y + g + n.bottom;
-      o.setCursor(s.x, a);
+      const a = o.getCursor();
+      let u = Math.max(a.y - s.y - r.top, 0) + r.top + r.bottom;
+      t.height && (u = t.height);
+      let m = o.contentAreaWidth;
+      typeof t.width == "number" && (m = t.width), (t.borderColor || t.fillColor || t.borderWidth) && o.box(s.x, s.y, m, u, t);
+      const f = s.y + u + n.bottom;
+      o.setCursor(s.x, f);
     });
-  }, []), null;
+  }, [o]), null;
 };
 export {
-  vt as PdfBox,
-  wt as PdfDocument,
-  xt as PdfImage,
-  Rt as PdfList,
-  ht as PdfRenderer,
+  xt as PdfBox,
+  gt as PdfDocument,
+  Rt as PdfImage,
+  Tt as PdfList,
+  Ct as PdfPreview,
+  dt as PdfRenderer,
   Et as PdfTable,
-  Tt as PdfText,
-  Ct as PdfView
+  St as PdfText,
+  Pt as PdfView
 };

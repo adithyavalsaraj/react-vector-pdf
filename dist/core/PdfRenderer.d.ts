@@ -5,6 +5,7 @@ export declare class PdfRenderer {
     private pdf;
     private pageWidth;
     private pageHeight;
+    private options;
     private cursorX;
     private cursorY;
     private contentWidth;
@@ -16,6 +17,7 @@ export declare class PdfRenderer {
     private footerDrawer?;
     private pendingTasks;
     private opQueue;
+    private generation;
     constructor(opts?: PDFOptions);
     get instance(): jsPDF;
     get width(): number;
@@ -33,6 +35,7 @@ export declare class PdfRenderer {
     };
     get baseLineHeight(): number;
     resetFlowCursor(): void;
+    reset(): void;
     setHeaderFooter(header?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void, footer?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void): void;
     private applyBaseFont;
     addPage(): void;
@@ -78,5 +81,6 @@ export declare class PdfRenderer {
         keywords?: string[];
     }): void;
     save(filename: string): void;
+    getBlobUrl(): URL;
 }
 export {};
