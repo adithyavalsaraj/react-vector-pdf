@@ -15,6 +15,153 @@ Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, eu
 Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.
 Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim.`;
 
+export interface DemoPdfContentProps {
+  tableHeaderColor: string;
+  tableStriped: boolean;
+  tableBorderWidth: string;
+}
+
+export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
+  tableHeaderColor,
+  tableStriped,
+  tableBorderWidth,
+}) => (
+  <>
+    <PdfText fontSize={18} fontStyle="bold">
+      Configurable PDF Demo
+    </PdfText>
+    <PdfText color="#6b7280">
+      Vector text — selectable and searchable. Configure page-numbering and
+      labels below, then generate.
+    </PdfText>
+
+    <PdfView
+      style={{
+        marginTop: 5,
+        padding: 4,
+        borderWidth: 0.3,
+        borderColor: "#e5e7eb",
+      }}
+    >
+      <PdfText fontStyle="bold">Bill To</PdfText>
+      <PdfText>Jane Doe</PdfText>
+      <PdfText>42, Long Street, Sample City</PdfText>
+      <PdfText>jane@example.com</PdfText>
+    </PdfView>
+
+    <PdfView style={{ margin: { top: 5, bottom: 5 } }}>
+      <PdfText>{lipsum.repeat(2)}</PdfText>
+    </PdfView>
+
+    <PdfView style={{ marginBottom: 10 }}>
+      <PdfText fontSize={14} fontStyle="bold">
+        Paragraphs & Lists
+      </PdfText>
+    </PdfView>
+
+    <PdfText>
+      {`This paragraph has standard spacing. ${lipsum.substring(0, 100)}...`}
+    </PdfText>
+
+    <PdfList
+      ordered={false}
+      items={[
+        "First item in a bullet list",
+        "Second item which is slightly longer to demonstrate how it looks in the PDF",
+        "Third item",
+      ]}
+    />
+    <PdfText> </PdfText>
+    <PdfList
+      ordered={true}
+      items={[
+        "First numbered item",
+        "Second numbered item",
+        "Third numbered item",
+      ]}
+    />
+
+    <PdfText> </PdfText>
+    <PdfText fontSize={14} fontStyle="bold" spacingBelow={5}>
+      Images & Layout
+    </PdfText>
+
+    <PdfImage src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png" />
+    <PdfText>{lipsum.repeat(2)}</PdfText>
+
+    <PdfText fontSize={14} fontStyle="bold" spacingBelow={5}>
+      Complex Table with Wrapping & Spans
+    </PdfText>
+    <PdfText fontSize={10} color="#555" spacingBelow={5}>
+      Demonstrates row spans (kept together on page breaks), col spans, vertical
+      alignment (middle), and specific cell styling.
+    </PdfText>
+
+    <PdfTable
+      width="100%"
+      headerHeight={8}
+      headerStyle={{ fontStyle: "bold", fillColor: tableHeaderColor }}
+      rowStyle={{ fontSize: 10 }}
+      alternateRowStyle={
+        tableStriped ? { fontSize: 10, fillColor: "#f9fafb" } : undefined
+      }
+      borderWidth={parseFloat(tableBorderWidth) || 0.1}
+      columns={[
+        { header: "ID", accessor: "id", width: 10, align: "center" },
+        {
+          header: "Description",
+          accessor: "desc",
+          width: "50%",
+          align: "left",
+        },
+        { header: "Qty", accessor: "qty", width: 15, align: "right" },
+        { header: "Price", accessor: "price", width: 20, align: "right" },
+      ]}
+      data={[
+        { id: 1, desc: "Standard Item", qty: 5, price: "$10.00" },
+        {
+          id: 2,
+          desc: "A very long item description to test wrapping functionality in the PdfTable component. It should expand the row height automatically.",
+          qty: 1,
+          price: "$25.00",
+        },
+        {
+          id: {
+            content: "3",
+            rowSpan: 2,
+            style: {
+              fillColor: "#e0f2fe",
+              verticalAlign: "middle",
+            },
+          },
+          desc: {
+            content: "RowSpan Item",
+            rowSpan: 2,
+            style: {
+              fillColor: "#e0f2fe",
+              verticalAlign: "middle",
+            },
+          },
+          qty: 10,
+          price: "$5.00",
+        },
+        { desc: "Skipped by rowspan", qty: 2, price: "$5.00" },
+        {
+          id: 4,
+          desc: {
+            content: "ColSpan Item",
+            colSpan: 2,
+            style: { align: "center", fontStyle: "italic" },
+          },
+          qty: "N/A",
+          price: "-",
+        },
+        { id: 5, desc: "Last Item", qty: 1, price: "$100.00" },
+      ]}
+    />
+  </>
+);
+
 function header(renderer: PdfRenderer, page: number, total: number) {
   const pdf = renderer.instance;
   pdf.setFontSize(10);
@@ -146,137 +293,10 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
       filename={filename}
       autoSave={false}
     >
-      <PdfText fontSize={18} fontStyle="bold">
-        Configurable PDF Demo
-      </PdfText>
-      <PdfText color="#6b7280">
-        Vector text — selectable and searchable. Configure page-numbering and
-        labels below, then generate.
-      </PdfText>
-
-      <PdfView
-        style={{
-          marginTop: 5,
-          padding: 4,
-          borderWidth: 0.3,
-          borderColor: "#e5e7eb",
-        }}
-      >
-        <PdfText fontStyle="bold">Bill To</PdfText>
-        <PdfText>Jane Doe</PdfText>
-        <PdfText>42, Long Street, Sample City</PdfText>
-        <PdfText>jane@example.com</PdfText>
-      </PdfView>
-
-      <PdfView style={{ margin: { top: 5, bottom: 5 } }}>
-        <PdfText>{lipsum.repeat(2)}</PdfText>
-      </PdfView>
-
-      <PdfView style={{ marginBottom: 10 }}>
-        <PdfText fontSize={14} fontStyle="bold">
-          Paragraphs & Lists
-        </PdfText>
-      </PdfView>
-
-      <PdfText>
-        {`This paragraph has standard spacing. ${lipsum.substring(0, 100)}...`}
-      </PdfText>
-
-      <PdfList
-        ordered={false}
-        items={[
-          "First item in a bullet list",
-          "Second item which is slightly longer to demonstrate how it looks in the PDF",
-          "Third item",
-        ]}
-      />
-      <PdfText> </PdfText>
-      <PdfList
-        ordered={true}
-        items={[
-          "First numbered item",
-          "Second numbered item",
-          "Third numbered item",
-        ]}
-      />
-
-      <PdfText> </PdfText>
-      <PdfText fontSize={14} fontStyle="bold" spacingBelow={5}>
-        Images & Layout
-      </PdfText>
-
-      <PdfImage src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png" />
-      <PdfText>{lipsum.repeat(2)}</PdfText>
-
-      <PdfText fontSize={14} fontStyle="bold" spacingBelow={5}>
-        Complex Table with Wrapping & Spans
-      </PdfText>
-      <PdfText fontSize={10} color="#555" spacingBelow={5}>
-        Demonstrates row spans (kept together on page breaks), col spans,
-        vertical alignment (middle), and specific cell styling.
-      </PdfText>
-
-      <PdfTable
-        width="100%"
-        headerHeight={8}
-        headerStyle={{ fontStyle: "bold", fillColor: tableHeaderColor }}
-        rowStyle={{ fontSize: 10 }}
-        alternateRowStyle={
-          tableStriped ? { fontSize: 10, fillColor: "#f9fafb" } : undefined
-        }
-        borderWidth={parseFloat(tableBorderWidth) || 0.1}
-        columns={[
-          { header: "ID", accessor: "id", width: 10, align: "center" },
-          {
-            header: "Description",
-            accessor: "desc",
-            width: "50%",
-            align: "left",
-          },
-          { header: "Qty", accessor: "qty", width: 15, align: "right" },
-          { header: "Price", accessor: "price", width: 20, align: "right" },
-        ]}
-        data={[
-          { id: 1, desc: "Standard Item", qty: 5, price: "$10.00" },
-          {
-            id: 2,
-            desc: "A very long item description to test wrapping functionality in the PdfTable component. It should expand the row height automatically.",
-            qty: 1,
-            price: "$25.00",
-          },
-          {
-            id: {
-              content: "3",
-              rowSpan: 2,
-              style: {
-                fillColor: "#e0f2fe",
-                verticalAlign: "middle",
-              },
-            },
-            desc: {
-              content: "RowSpan Item",
-              rowSpan: 2,
-              style: {
-                fillColor: "#e0f2fe",
-                verticalAlign: "middle",
-              },
-            },
-            qty: 10,
-            price: "$5.00",
-          },
-          { desc: "Skipped by rowspan", qty: 2, price: "$5.00" },
-          {
-            id: 4,
-            desc: {
-              content: "ColSpan Item",
-              colSpan: 2,
-              style: { align: "center", fontStyle: "italic" },
-            },
-            qty: "N/A",
-            price: "-",
-          },
-          { id: 5, desc: "Last Item", qty: 1, price: "$100.00" },
-        ]}
+      <DemoPdfContent
+        tableHeaderColor={tableHeaderColor}
+        tableStriped={tableStriped}
+        tableBorderWidth={tableBorderWidth}
       />
     </PdfDocument>
   );

@@ -403,7 +403,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       renderRows();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, columns, width]); // simplified deps
+  }, [pdf, data, columns, width]); // simplified deps
 
   return null;
 };

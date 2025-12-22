@@ -65,7 +65,7 @@ export const PdfList: React.FC<PdfListProps> = ({
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, ordered, style, indent, markerWidth, spacing]);
+  }, [pdf, items, ordered, style, indent, markerWidth, spacing]);
 
   return null;
 };

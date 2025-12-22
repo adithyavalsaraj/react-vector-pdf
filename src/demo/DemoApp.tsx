@@ -1,9 +1,16 @@
 import React from "react";
+import { PdfPreview } from "../components/PdfPreview";
+import { PdfRenderer } from "../core/PdfRenderer";
 import { CodeBlock } from "./CodeBlock";
-import { DemoPdfDocument } from "./DemoPdfDocument";
+import { DemoPdfContent, DemoPdfDocument } from "./DemoPdfDocument";
 
 export const DemoApp: React.FC = () => {
+  const [mode, setMode] = React.useState<"download" | "preview">("download");
   const [downloading, setDownloading] = React.useState(false);
+  const [previewConfig, setPreviewConfig] = React.useState<any>(null);
+
+  const [previewWidth, setPreviewWidth] = React.useState("100%");
+  const [previewHeight, setPreviewHeight] = React.useState("600px");
 
   // Page Numbers config
   const [pnEnabled, setPnEnabled] = React.useState(true);
@@ -49,56 +56,129 @@ export const DemoApp: React.FC = () => {
   const [tableBorderWidth, setTableBorderWidth] = React.useState("0.1");
   const [tableHeaderColor, setTableHeaderColor] = React.useState("#f3f4f6");
 
-  const handleDownload = () => {
-    setDownloading(true);
-    setTimeout(() => {
-      const filename = "pdfify-configurable-demo.pdf";
-      const save = (r: any) => r.save(filename);
+  const handleGenerate = () => {
+    if (mode === "download") {
+      setDownloading(true);
+      setTimeout(() => {
+        const filename = "pdfify-configurable-demo.pdf";
+        const save = (r: any) => r.save(filename);
 
-      // Create a component that renders DemoPdfDocument with current state
-      const Root: React.FC = () => (
-        <DemoPdfDocument
-          pnEnabled={pnEnabled}
-          pnPos={pnPos}
-          pnAlign={pnAlign}
-          pnPreset={pnPreset}
-          pnTemplate={pnTemplate}
-          pnFormat={pnFormat}
-          pnScope={pnScope}
-          pnCustomPages={pnCustomPages}
-          pnY={pnY}
-          pnOffsetX={pnOffsetX}
-          pnFontSize={pnFontSize}
-          pnColor={pnColor}
-          clEnabled={clEnabled}
-          clPos={clPos}
-          clText={clText}
-          clScope={clScope}
-          clCustomPages={clCustomPages}
-          clY={clY}
-          clOffsetX={clOffsetX}
-          clFontSize={clFontSize}
-          clColor={clColor}
-          tableStriped={tableStriped}
-          tableBorderWidth={tableBorderWidth}
-          tableHeaderColor={tableHeaderColor}
-          onReady={save}
-          filename={filename}
-        />
-      );
+        // Create a component that renders DemoPdfDocument with current state
+        const Root: React.FC = () => (
+          <DemoPdfDocument
+            pnEnabled={pnEnabled}
+            pnPos={pnPos}
+            pnAlign={pnAlign}
+            pnPreset={pnPreset}
+            pnTemplate={pnTemplate}
+            pnFormat={pnFormat}
+            pnScope={pnScope}
+            pnCustomPages={pnCustomPages}
+            pnY={pnY}
+            pnOffsetX={pnOffsetX}
+            pnFontSize={pnFontSize}
+            pnColor={pnColor}
+            clEnabled={clEnabled}
+            clPos={clPos}
+            clText={clText}
+            clScope={clScope}
+            clCustomPages={clCustomPages}
+            clY={clY}
+            clOffsetX={clOffsetX}
+            clFontSize={clFontSize}
+            clColor={clColor}
+            tableStriped={tableStriped}
+            tableBorderWidth={tableBorderWidth}
+            tableHeaderColor={tableHeaderColor}
+            onReady={save}
+            filename={filename}
+          />
+        );
 
-      const temp = document.createElement("div");
-      document.body.appendChild(temp);
-      import("react-dom/client").then(({ createRoot }) => {
-        const root = createRoot(temp);
-        root.render(<Root />);
-        setTimeout(() => {
-          root.unmount();
-          document.body.removeChild(temp);
-          setDownloading(false);
-        }, 100);
+        const temp = document.createElement("div");
+        document.body.appendChild(temp);
+        import("react-dom/client").then(({ createRoot }) => {
+          const root = createRoot(temp);
+          root.render(<Root />);
+          setTimeout(() => {
+            root.unmount();
+            document.body.removeChild(temp);
+            setDownloading(false);
+          }, 100);
+        });
+      }, 50);
+    } else {
+      // Preview Mode: Snapshot current config
+      setPreviewConfig({
+        options: {
+          margin: { top: 18, right: 15, bottom: 15, left: 15 },
+          font: { size: 12 },
+          color: "#111827",
+          lineHeight: 1.35,
+        },
+        header: (renderer: PdfRenderer, page: number, total: number) => {
+          const pdf = renderer.instance;
+          pdf.setFontSize(10);
+          pdf.text("pdfify-core — Demo", renderer.contentLeft, 10);
+          pdf.setLineWidth(0.2);
+          pdf.line(renderer.contentLeft, 12, renderer.contentRight, 12);
+        },
+        footer: (renderer: PdfRenderer, page: number, total: number) => {
+          const pdf = renderer.instance;
+          pdf.setFontSize(9);
+          pdf.setTextColor(120);
+          pdf.text(
+            "Generated with jsPDF (vector text, selectable)",
+            renderer.contentLeft,
+            renderer.height - 7
+          );
+        },
+        pageNumbers: {
+          enabled: pnEnabled,
+          position: pnPos,
+          align: pnAlign,
+          preset: pnTemplate ? undefined : pnPreset,
+          template: pnTemplate || undefined,
+          format: pnFormat,
+          scope: (pnScope === "custom"
+            ? pnCustomPages
+                .split(",")
+                .map((s) => parseInt(s.trim()))
+                .filter((n) => !isNaN(n))
+            : pnScope) as any,
+          y: pnY ? Number(pnY) : undefined,
+          offsetX: pnOffsetX ? Number(pnOffsetX) : undefined,
+          style: {
+            fontSize: pnFontSize ? Number(pnFontSize) : undefined,
+            color: pnColor || undefined,
+          },
+        },
+        centerLabel: {
+          enabled: clEnabled,
+          position: clPos,
+          text: clText,
+          scope: (clScope === "custom"
+            ? clCustomPages
+                .split(",")
+                .map((s) => parseInt(s.trim()))
+                .filter((n) => !isNaN(n))
+            : clScope) as any,
+          y: clY ? Number(clY) : undefined,
+          offsetX: clOffsetX ? Number(clOffsetX) : undefined,
+          style: {
+            fontSize: clFontSize ? Number(clFontSize) : undefined,
+            color: clColor || undefined,
+          },
+        },
+        contentProps: {
+          tableHeaderColor,
+          tableStriped,
+          tableBorderWidth,
+        },
+        width: previewWidth,
+        height: previewHeight,
       });
-    }, 50);
+    }
   };
 
   return (
@@ -360,10 +440,57 @@ export const DemoApp: React.FC = () => {
           </div>
         </div>
 
+        <div className="hstack mb-4" style={{ marginBottom: 20 }}>
+          <label>
+            <strong>Mode:</strong>
+          </label>
+          <div className="hstack gap-2">
+            <label>
+              <input
+                type="radio"
+                name="mode"
+                value="download"
+                checked={mode === "download"}
+                onChange={() => setMode("download")}
+              />{" "}
+              Download
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="mode"
+                value="preview"
+                checked={mode === "preview"}
+                onChange={() => setMode("preview")}
+              />{" "}
+              Preview
+            </label>
+          </div>
+        </div>
+
+        {mode === "preview" && (
+          <div className="grid grid-2 mb-4">
+            <div className="control">
+              <label>Preview Width</label>
+              <input
+                value={previewWidth}
+                onChange={(e) => setPreviewWidth(e.target.value)}
+              />
+            </div>
+            <div className="control">
+              <label>Preview Height</label>
+              <input
+                value={previewHeight}
+                onChange={(e) => setPreviewHeight(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="hstack">
           <button
             className="btn"
-            onClick={handleDownload}
+            onClick={handleGenerate}
             disabled={downloading}
           >
             {downloading ? "Generating…" : "Generate PDF"}
@@ -372,6 +499,21 @@ export const DemoApp: React.FC = () => {
             Tip: set a custom template like <code>{"Pg {page} / {total}"}</code>
           </small>
         </div>
+
+        {mode === "preview" && previewConfig && (
+          <div
+            className="preview-container"
+            style={{ marginTop: 20, border: "1px solid #e5e7eb" }}
+          >
+            <PdfPreview
+              width={previewConfig?.width || previewWidth}
+              height={previewConfig?.height || previewHeight}
+              {...previewConfig}
+            >
+              <DemoPdfContent {...previewConfig.contentProps} />
+            </PdfPreview>
+          </div>
+        )}
 
         <div className="preview" style={{ marginTop: 16 }}>
           <p>

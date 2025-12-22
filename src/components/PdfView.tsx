@@ -62,7 +62,7 @@ export const PdfView: React.FC<PdfViewProps> = ({ style = {}, children }) => {
       pdf.setCursor(start.x + pad.left, start.y + pad.top);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, [pdf]); // Run once on mount
 
   return (
     <React.Fragment>
@@ -127,7 +127,7 @@ const PdfViewFinisher: React.FC<{
       pdf.setCursor(start.x, finalY);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pdf]);
 
   return null;
 };

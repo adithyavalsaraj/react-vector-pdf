@@ -31,7 +31,16 @@ export const PdfText: React.FC<PdfTextProps> = ({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [children, x, y, maxWidth, spacingBelow, style.fontSize, style.align]); // Add dependencies as needed
+  }, [
+    pdf,
+    children,
+    x,
+    y,
+    maxWidth,
+    spacingBelow,
+    style.fontSize,
+    style.align,
+  ]); // Add dependencies as needed
 
   return null;
 };

@@ -45,7 +45,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
   filename,
   autoSave = false,
 }) => {
-  const [renderer] = React.useState(() => new PdfRenderer(options));
+  const renderer = React.useMemo(() => new PdfRenderer(options), [options]);
 
   React.useEffect(() => {
     if (metadata) {
@@ -149,8 +149,12 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
     renderer.waitForTasks().then(() => {
       onReady?.(renderer);
     });
+
+    return () => {
+      renderer.reset();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [renderer]);
 
   React.useEffect(() => {
     if (autoSave && filename) {

@@ -51,6 +51,6 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, x, y, w, h, mime, flow, align]);
+  }, [pdf, src, x, y, w, h, mime, flow, align]);
   return null;
 };

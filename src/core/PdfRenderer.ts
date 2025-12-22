@@ -8,6 +8,7 @@ export class PdfRenderer {
   private pdf: jsPDF;
   private pageWidth: number;
   private pageHeight: number;
+  private options: PDFOptions;
 
   private cursorX = 0;
   private cursorY = 0;
@@ -37,8 +38,10 @@ export class PdfRenderer {
 
   private pendingTasks: Set<Promise<any>> = new Set();
   private opQueue: Promise<void> = Promise.resolve();
+  private generation = 0;
 
   constructor(opts: PDFOptions = {}) {
+    this.options = opts;
     this.margin = opts.margin ?? this.margin;
     this.defaultFont = {
       name: opts.font?.name,
@@ -99,6 +102,30 @@ export class PdfRenderer {
     this.cursorX = this.margin.left;
     this.cursorY = this.margin.top;
     this.contentWidth = this.pageWidth - this.margin.left - this.margin.right;
+  }
+
+  reset() {
+    // Re-initialize jsPDF with saved options
+    this.pdf = new jsPDF({
+      unit: this.options.unit ?? "mm",
+      format: this.options.format ?? "a4",
+      orientation: this.options.orientation ?? "p",
+    });
+
+    this.generation++; // Invalidate pending operations
+
+    this.cursorX = 0;
+    this.cursorY = 0;
+    this.pendingTasks = new Set();
+    this.opQueue = Promise.resolve();
+
+    // Re-apply defaults
+    this.resetFlowCursor();
+    this.applyBaseFont();
+    if (this.options.color) {
+      const rgb = hexToRgb(this.options.color);
+      if (rgb) this.pdf.setTextColor(...rgb);
+    }
   }
 
   setHeaderFooter(
@@ -272,8 +299,14 @@ export class PdfRenderer {
   }
 
   queueOperation(op: () => Promise<void> | void) {
+    // Capture current generation
+    const gen = this.generation;
+
     // Chain the operation to the queue
     const task = this.opQueue.then(async () => {
+      // Abort if generation has changed (renderer was reset)
+      if (this.generation !== gen) return;
+
       try {
         await op();
       } catch (e) {
@@ -425,5 +458,10 @@ export class PdfRenderer {
   save(filename: string) {
     this.applyHeaderFooter();
     this.pdf.save(filename);
+  }
+
+  getBlobUrl() {
+    this.applyHeaderFooter();
+    return this.pdf.output("bloburl");
   }
 }

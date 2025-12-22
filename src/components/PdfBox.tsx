@@ -45,7 +45,7 @@ export const PdfBox: React.FC<PdfBoxProps> = ({
         pdf.box(x, y, w, h, style);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, w, h]);
+    }, [pdf, x, y, w, h]);
 
     return <React.Fragment>{children}</React.Fragment>;
   }
@@ -60,7 +60,7 @@ export const PdfBox: React.FC<PdfBoxProps> = ({
       pdf.setCursor(innerX, innerY);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pdf]);
 
   return (
     <React.Fragment>
@@ -94,7 +94,7 @@ const PdfBoxFinisher: React.FC<{
       pdf.setCursor(start.x, start.y + boxH);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pdf]);
 
   return null;
 };
