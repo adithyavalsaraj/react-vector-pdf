@@ -29,7 +29,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release": "release-it"
   },
   "keywords": [
     "pdf",
@@ -51,11 +52,13 @@
     "jspdf": "^3.0.4"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.4",
     "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "baseline-browser-mapping": "^2.9.11",
+    "release-it": "^19.1.0",
     "sass": "^1.97.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
