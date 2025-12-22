@@ -61,30 +61,29 @@ const MyPdf = () => {
 };
 ```
 
-63:
-64: ## Previewing
-65:
-66: You can embed a live preview of the PDF using the `PdfPreview` component. This component renders an `iframe` containing the generated PDF blob.
-67:
-68: `tsx
-69: import { PdfPreview, PdfText } from "react-vector-pdf";
-70: 
-71: <PdfPreview width="100%" height={600} options={{ ... }}>
-72:   <PdfText>I am visible in the preview!</PdfText>
-73: </PdfPreview>
-74: `
-75:
-76: **Props:**
-77:
-78: - All `PdfDocument` props (`options`, `metadata`, `pageNumbers`, `centerLabel`, etc.) are supported and passed through.
-79: - `width` (string | number): Width of the container (default "100%").
-80: - `height` (string | number): Height of the container (default "100%").
-81: - `className` / `style`: Styling for the wrapper div.
-82: - `iframeClassName` / `iframeStyle`: Styling for the internal iframe.
-83:
-84: **Note:** Changing props (like options, colors, fonts) will automatically regenerate and update the preview.
-85:
-86: ## Components
+## Previewing
+
+You can embed a live preview of the PDF using the `PdfPreview` component. This component renders an `iframe` containing the generated PDF blob.
+
+```tsx
+import { PdfPreview, PdfText } from "react-vector-pdf";
+
+<PdfPreview width="100%" height={600} options={{ ... }}>
+  <PdfText>I am visible in the preview!</PdfText>
+</PdfPreview>
+```
+
+**Props:**
+
+- All `PdfDocument` props (`options`, `metadata`, `pageNumbers`, `centerLabel`, etc.) are supported and passed through.
+- `width` (string | number): Width of the container (default "100%").
+- `height` (string | number): Height of the container (default "100%").
+- `className` / `style`: Styling for the wrapper div.
+- `iframeClassName` / `iframeStyle`: Styling for the internal iframe.
+  83:
+  84: **Note:** Changing props (like options, colors, fonts) will automatically regenerate and update the preview.
+  85:
+  86: ## Components
 
 ## Components
 
