@@ -383,6 +383,7 @@ export const DemoApp: React.FC = () => {
               ) : (
                 <div className="h-full">
                   <CodeBlock
+                    style={{ height: "calc(100vh - 224px)" }}
                     code={generateReactCode(items, {
                       pnEnabled,
                       pnPos,

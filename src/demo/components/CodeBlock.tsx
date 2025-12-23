@@ -2,9 +2,15 @@ import React, { useState } from "react";
 
 interface CodeBlockProps {
   code: string;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
-export const CodeBlock: React.FC<CodeBlockProps> = ({ code }) => {
+export const CodeBlock: React.FC<CodeBlockProps> = ({
+  code,
+  style,
+  className = "",
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -14,8 +20,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code }) => {
   };
 
   return (
-    <div className="code-block" style={{ height: "calc(100vh - 224px)" }}>
-      <pre>{code}</pre>
+    <div className={`code-block ${className}`} style={style}>
+      <div className="code-scroll">
+        <pre>{code}</pre>
+      </div>
       <button className="copy-btn" onClick={handleCopy}>
         {copied ? "Copied!" : "Copy"}
       </button>

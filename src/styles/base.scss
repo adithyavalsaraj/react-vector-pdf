@@ -533,13 +533,18 @@ ul.list-disc {
   position: relative;
   background: #1e1e1e;
   color: #d4d4d4;
-  padding: 1rem;
+  padding: 0;
   border-radius: $radius-md;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 0.8125rem;
-  overflow: auto;
   margin: 0;
-  height: 100%;
+
+  .code-scroll {
+    overflow: auto;
+    padding: 1rem;
+    height: 100%;
+    max-height: 100%;
+  }
 
   pre {
     margin: 0;
@@ -548,7 +553,7 @@ ul.list-disc {
   .copy-btn {
     position: absolute;
     top: 8px;
-    right: 8px;
+    right: 24px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: #fff;
