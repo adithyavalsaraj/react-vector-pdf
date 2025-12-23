@@ -3,6 +3,7 @@ import { PdfPreview } from "../components/PdfPreview";
 import { DemoPdfDocument } from "./DemoPdfDocument";
 import { BuilderControls } from "./components/BuilderControls";
 import { BuilderList } from "./components/BuilderList";
+import { CodeBlock } from "./components/CodeBlock";
 import { DemoPdfContent } from "./components/DemoPdfContent";
 import { DocsContent } from "./components/DocsContent";
 import { Tabs } from "./components/Tabs";
@@ -11,6 +12,7 @@ import { ImageSettings } from "./components/settings/ImageSettings";
 import { PageNumberSettings } from "./components/settings/PageNumberSettings";
 import { TableSettings } from "./components/settings/TableSettings";
 import { useDemoApp } from "./hooks/useDemoApp";
+import { generateReactCode } from "./utils/codeGenerator";
 import { demoFooter, demoHeader, parsePages } from "./utils/pdfHelpers";
 
 export const DemoApp: React.FC = () => {
@@ -88,55 +90,65 @@ export const DemoApp: React.FC = () => {
     clearAllItems,
   } = useDemoApp();
 
+  /* 
+    Updated Logic:
+    - 'preview' mode automatically updates via useEffect in useDemoApp (if we set it up that way) or we can manually trigger it.
+    - 'code' mode just renders the string.
+    - 'download' action is now explicit via button click, regardless of current view mode.
+  */
   const handleGenerate = () => {
-    if (mode === "download") {
-      setDownloading(true);
-      setTimeout(() => {
-        const filename = "pdfify-configurable-demo.pdf";
-        const save = (r: any) => r.save(filename);
+    // Always trigger download when this function is called (since it's attached to the "Download PDF" button)
+    setDownloading(true);
+    setTimeout(() => {
+      const filename = "pdfify-configurable-demo.pdf";
+      const save = (r: any) => r.save(filename);
 
-        const Root: React.FC = () => (
-          <DemoPdfDocument
-            pnEnabled={pnEnabled}
-            pnPos={pnPos}
-            pnAlign={pnAlign}
-            pnPreset={pnPreset}
-            pnTemplate={pnTemplate}
-            pnFormat={pnFormat}
-            pnScope={pnScope}
-            pnCustomPages={pnCustomPages}
-            pnY={pnY}
-            pnOffsetX={pnOffsetX}
-            pnFontSize={pnFontSize}
-            pnColor={pnColor}
-            clEnabled={clEnabled}
-            clPos={clPos}
-            clText={clText}
-            clScope={clScope}
-            clCustomPages={clCustomPages}
-            clY={clY}
-            clOffsetX={clOffsetX}
-            clFontSize={clFontSize}
-            clColor={clColor}
-            items={items}
-            onReady={save}
-            filename={filename}
-          />
-        );
+      const Root: React.FC = () => (
+        <DemoPdfDocument
+          pnEnabled={pnEnabled}
+          pnPos={pnPos}
+          pnAlign={pnAlign}
+          pnPreset={pnPreset}
+          pnTemplate={pnTemplate}
+          pnFormat={pnFormat}
+          pnScope={pnScope}
+          pnCustomPages={pnCustomPages}
+          pnY={pnY}
+          pnOffsetX={pnOffsetX}
+          pnFontSize={pnFontSize}
+          pnColor={pnColor}
+          clEnabled={clEnabled}
+          clPos={clPos}
+          clText={clText}
+          clScope={clScope}
+          clCustomPages={clCustomPages}
+          clY={clY}
+          clOffsetX={clOffsetX}
+          clFontSize={clFontSize}
+          clColor={clColor}
+          items={items}
+          onReady={save}
+          filename={filename}
+        />
+      );
 
-        const temp = document.createElement("div");
-        document.body.appendChild(temp);
-        import("react-dom/client").then(({ createRoot }) => {
-          const root = createRoot(temp);
-          root.render(<Root />);
-          setTimeout(() => {
-            root.unmount();
-            document.body.removeChild(temp);
-            setDownloading(false);
-          }, 100);
-        });
-      }, 50);
-    } else {
+      const temp = document.createElement("div");
+      document.body.appendChild(temp);
+      import("react-dom/client").then(({ createRoot }) => {
+        const root = createRoot(temp);
+        root.render(<Root />);
+        setTimeout(() => {
+          root.unmount();
+          document.body.removeChild(temp);
+          setDownloading(false);
+        }, 100);
+      });
+    }, 50);
+  };
+
+  // Effect to keep preview updated when in preview mode
+  React.useEffect(() => {
+    if (mode === "preview") {
       setPreviewConfig({
         options: {
           margin: { top: 18, right: 15, bottom: 15, left: 15 },
@@ -182,195 +194,224 @@ export const DemoApp: React.FC = () => {
         height: previewHeight,
       });
     }
-  };
+  }, [
+    mode,
+    pnEnabled,
+    pnPos,
+    pnAlign,
+    pnPreset,
+    pnTemplate,
+    pnFormat,
+    pnScope,
+    pnCustomPages,
+    pnY,
+    pnOffsetX,
+    pnFontSize,
+    pnColor,
+    clEnabled,
+    clPos,
+    clText,
+    clScope,
+    clCustomPages,
+    clY,
+    clOffsetX,
+    clFontSize,
+    clColor,
+    items,
+    previewWidth,
+    previewHeight,
+  ]);
 
+  // Fixed full height layout
   return (
-    <div className="demo-wrap">
-      <div className="card vstack">
-        <h1>react-vector-pdf — Dynamic Builder Demo</h1>
-
+    <div className="demo-wrap h-screen flex flex-col overflow-hidden">
+      {/* HEADER & TABS */}
+      <div className="card vstack gap-4 pb-0">
+        <div>
+          <h1 className="text-xl font-bold">
+            react-vector-pdf — Dynamic Builder Demo
+          </h1>
+          <p className="text-sm text-muted">
+            Configure your document layout and content using the builder below.
+          </p>
+        </div>
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
 
-        {activeTab === "demo" ? (
-          <div className="vstack">
-            <p>
-              Customize page numbers and watermarks below. Use the{" "}
-              <strong>Interactive Builder</strong> to add recurring sections
-              (e.g. Member Header) that appear on all pages with automatic space
-              reservation.
-            </p>
-            <div className="hr"></div>
-
-            <div className="vstack">
-              <h3>Interactive Builder</h3>
-              <p>
-                Add components and toggle <code>showInAllPages</code> to see
-                space reservation in action.
-              </p>
-
-              <BuilderControls onAddItem={addItem} onClearAll={clearAllItems} />
-              <BuilderList
-                items={items}
-                onRemove={removeItem}
-                onUpdate={updateItem}
-                onUpdateProps={updateItemProps}
-              />
-            </div>
-
-            <div className="hr"></div>
-
-            <PageNumberSettings
-              enabled={pnEnabled}
-              setEnabled={setPnEnabled}
-              pos={pnPos}
-              setPos={setPnPos}
-              align={pnAlign}
-              setAlign={setPnAlign}
-              preset={pnPreset}
-              setPreset={setPnPreset}
-              template={pnTemplate}
-              setTemplate={setPnTemplate}
-              format={pnFormat}
-              setFormat={setPnFormat}
-              scope={pnScope}
-              setScope={setPnScope}
-              customPages={pnCustomPages}
-              setCustomPages={setPnCustomPages}
-              y={pnY}
-              setY={setPnY}
-              offsetX={pnOffsetX}
-              setOffsetX={setPnOffsetX}
-              fontSize={pnFontSize}
-              setFontSize={setPnFontSize}
-              color={pnColor}
-              setColor={setPnColor}
-            />
-
-            <div className="hr"></div>
-
-            <CenterLabelSettings
-              enabled={clEnabled}
-              setEnabled={setClEnabled}
-              pos={clPos}
-              setPos={setClPos}
-              text={clText}
-              setText={setClText}
-              scope={clScope}
-              setScope={setClScope}
-              customPages={clCustomPages}
-              setCustomPages={setClCustomPages}
-              y={clY}
-              setY={setClY}
-              offsetX={clOffsetX}
-              setOffsetX={setClOffsetX}
-              fontSize={clFontSize}
-              setFontSize={setClFontSize}
-              color={clColor}
-              setColor={setClColor}
-            />
-
-            <div className="hr"></div>
-
-            <TableSettings
-              striped={tableStriped}
-              setStriped={setTableStriped}
-              borderWidth={tableBorderWidth}
-              setBorderWidth={setTableBorderWidth}
-              headerColor={tableHeaderColor}
-              setHeaderColor={setTableHeaderColor}
-            />
-
-            <div className="hr"></div>
-
-            <ImageSettings
-              layout={imgLayout}
-              setLayout={setImgLayout}
-              sizing={imgSizing}
-              setSizing={setImgSizing}
-            />
-
-            <div className="hr"></div>
-
-            <div className="vstack gap-3 border p-4 rounded bg-gray-50 mt-4">
-              <div className="hstack justify-between">
-                <div className="vstack gap-1">
-                  <h3 className="mb-0">Generate PDF</h3>
-                  <p className="text-sm text-muted mb-0">
-                    Process current configuration using the core engine.
-                  </p>
-                </div>
-                <div className="hstack gap-2">
-                  <select
-                    className="select-sm"
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value as any)}
-                  >
-                    <option value="download">Direct Download</option>
-                    <option value="preview">Live Preview</option>
-                  </select>
-                  <button
-                    className={`btn btn-sm ${
-                      downloading
-                        ? "loading"
-                        : mode === "preview"
-                        ? "outline"
-                        : ""
-                    }`}
-                    onClick={handleGenerate}
-                    disabled={downloading}
-                  >
-                    {downloading
-                      ? "Processing..."
-                      : mode === "download"
-                      ? "Download"
-                      : "Preview"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {mode === "preview" && previewConfig && (
-              <div className="preview-wrap mt-4">
-                <div className="hstack justify-between mb-2">
-                  <h3 className="mb-0">Live Preview</h3>
+      {activeTab === "demo" ? (
+        <div className="split-layout">
+          {/* LEFT PANE: BUILDER & SETTINGS */}
+          <div className="pane-left pane-scrollable">
+            <div className="vstack gap-4">
+              <div className="vstack">
+                <div className="hstack justify-between items-center">
+                  <h3 className="text-sm font-bold uppercase text-muted m-0">
+                    Content
+                  </h3>
                   <div className="hstack gap-2">
-                    <input
-                      placeholder="W (e.g. 100%)"
-                      className="input-sm w-20"
-                      value={previewWidth}
-                      onChange={(e) => setPreviewWidth(e.target.value)}
-                    />
-                    <input
-                      placeholder="H (e.g. 600px)"
-                      className="input-sm w-20"
-                      value={previewHeight}
-                      onChange={(e) => setPreviewHeight(e.target.value)}
+                    <BuilderControls
+                      onAddItem={addItem}
+                      onClearAll={clearAllItems}
                     />
                   </div>
                 </div>
-                <PdfPreview
-                  width={previewWidth}
-                  height={previewHeight}
-                  {...previewConfig}
-                >
-                  <DemoPdfContent items={previewConfig.items} />
-                </PdfPreview>
+                <BuilderList
+                  items={items}
+                  onRemove={removeItem}
+                  onUpdate={updateItem}
+                  onUpdateProps={updateItemProps}
+                />
               </div>
-            )}
 
-            <div className="preview" style={{ marginTop: 16 }}>
-              <p>
-                <strong>Preview notes:</strong> This demo draws directly to
-                jsPDF using vector text. Configure options above, then generate
-                to see headers, footers, page numbers, and center labels
-                rendered as real text.
-              </p>
+              <div className="hr"></div>
+
+              <div className="vstack gap-4">
+                <h3 className="text-sm font-bold uppercase text-muted m-0">
+                  Global Settings
+                </h3>
+
+                <PageNumberSettings
+                  enabled={pnEnabled}
+                  setEnabled={setPnEnabled}
+                  pos={pnPos}
+                  setPos={setPnPos}
+                  align={pnAlign}
+                  setAlign={setPnAlign}
+                  preset={pnPreset}
+                  setPreset={setPnPreset}
+                  template={pnTemplate}
+                  setTemplate={setPnTemplate}
+                  format={pnFormat}
+                  setFormat={setPnFormat}
+                  scope={pnScope}
+                  setScope={setPnScope}
+                  customPages={pnCustomPages}
+                  setCustomPages={setPnCustomPages}
+                  y={pnY}
+                  setY={setPnY}
+                  offsetX={pnOffsetX}
+                  setOffsetX={setPnOffsetX}
+                  fontSize={pnFontSize}
+                  setFontSize={setPnFontSize}
+                  color={pnColor}
+                  setColor={setPnColor}
+                />
+
+                <CenterLabelSettings
+                  enabled={clEnabled}
+                  setEnabled={setClEnabled}
+                  pos={clPos}
+                  setPos={setClPos}
+                  text={clText}
+                  setText={setClText}
+                  scope={clScope}
+                  setScope={setClScope}
+                  customPages={clCustomPages}
+                  setCustomPages={setClCustomPages}
+                  y={clY}
+                  setY={setClY}
+                  offsetX={clOffsetX}
+                  setOffsetX={setClOffsetX}
+                  fontSize={clFontSize}
+                  setFontSize={setClFontSize}
+                  color={clColor}
+                  setColor={setClColor}
+                />
+
+                <TableSettings
+                  striped={tableStriped}
+                  setStriped={setTableStriped}
+                  borderWidth={tableBorderWidth}
+                  setBorderWidth={setTableBorderWidth}
+                  headerColor={tableHeaderColor}
+                  setHeaderColor={setTableHeaderColor}
+                />
+
+                <ImageSettings
+                  layout={imgLayout}
+                  setLayout={setImgLayout}
+                  sizing={imgSizing}
+                  setSizing={setImgSizing}
+                />
+              </div>
             </div>
           </div>
-        ) : (
-          <DocsContent />
-        )}
-      </div>
+
+          {/* RIGHT PANE: PREVIEW & CODE */}
+          <div className="pane-right">
+            {/* Header */}
+            <div className="hstack justify-between p-3 border-bottom bg-white justify-center">
+              <div className="hstack gap-2">
+                <button
+                  className={`tab-btn ${mode === "preview" ? "active" : ""}`}
+                  onClick={() => setMode("preview")}
+                  style={{ fontSize: "0.9rem", padding: "0.5rem" }}
+                >
+                  Live Preview
+                </button>
+                <button
+                  className={`tab-btn ${mode === "download" ? "active" : ""}`}
+                  onClick={() => setMode("code" as any)}
+                  style={{ fontSize: "0.9rem", padding: "0.5rem" }}
+                >
+                  View Code
+                </button>
+              </div>
+              <div className="hstack gap-2">
+                <button
+                  className={`btn btn-sm ${downloading ? "loading" : ""}`}
+                  onClick={handleGenerate}
+                  disabled={downloading}
+                >
+                  {downloading ? "Processing..." : "Download PDF"}
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-hidden relative bg-gray-50 px-4 min-h-0">
+              {mode === "preview" ? (
+                <div className="pane-scrollable p-4 flex flex-col items-center justify-center bg-gray-100">
+                  {previewConfig && (
+                    <div className="shadow-lg w-full h-full relative">
+                      <PdfPreview {...previewConfig}>
+                        <DemoPdfContent items={previewConfig.items} />
+                      </PdfPreview>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-full">
+                  <CodeBlock
+                    code={generateReactCode(items, {
+                      pnEnabled,
+                      pnPos,
+                      pnAlign,
+                      pnScope,
+                      clEnabled,
+                      clText,
+                      clScope,
+                    })}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto w-full p-4 min-h-0">
+          <div
+            style={{
+              maxWidth: "800px",
+              margin: "0 auto",
+              height: "calc(100vh - 174px)",
+              overflow: "auto",
+            }}
+          >
+            <DocsContent />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

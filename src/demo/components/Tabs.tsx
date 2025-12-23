@@ -8,7 +8,7 @@ export interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
   return (
-    <div className="tabs">
+    <div className="tabs mb-0">
       <button
         className={`tab-btn ${activeTab === "demo" ? "active" : ""}`}
         onClick={() => setActiveTab("demo")}

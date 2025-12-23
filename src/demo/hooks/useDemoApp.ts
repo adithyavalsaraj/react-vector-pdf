@@ -7,8 +7,12 @@ export const useDemoApp = () => {
   const [downloading, setDownloading] = useState(false);
   const [previewConfig, setPreviewConfig] = useState<any>(null);
 
-  const [previewWidth, setPreviewWidth] = useState("100%");
-  const [previewHeight, setPreviewHeight] = useState("600px");
+  const [previewWidth, setPreviewWidth] = useState<string | undefined>(
+    undefined
+  );
+  const [previewHeight, setPreviewHeight] = useState<string | undefined>(
+    undefined
+  );
 
   // Page Numbers config
   const [pnEnabled, setPnEnabled] = useState(true);

@@ -52,18 +52,21 @@ p {
 }
 
 .demo-wrap {
-  min-height: 100vh;
-  padding: 40px 20px;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 24px;
+  background: #f9fafb;
+  overflow: hidden;
 }
 
 .card {
-  @include card;
   width: 100%;
-  max-width: $container-width;
+  padding: 24px;
+  background: #fff;
+  // border-bottom: 1px solid $border;
+  /* Removed max-width and card shadow styles for full-screen layout */
 }
 
 // Controls Grid
@@ -186,6 +189,15 @@ select {
 }
 .p-4 {
   padding: 1rem !important;
+}
+
+.pb-0 {
+  padding-bottom: 0 !important;
+}
+
+.px-4 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
 }
 
 .m-0 {
@@ -482,6 +494,72 @@ ul.list-disc {
     &.active {
       color: $primary;
       border-bottom-color: $primary;
+    }
+  }
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* Strict 50-50 split */
+  flex: 1; /* Take remaining height */
+  overflow: hidden;
+  background-color: #fff;
+  min-height: 0; /* Important for grid/flex nested scrolling */
+  padding-bottom: 1rem;
+}
+
+.pane {
+  &-scrollable {
+    overflow-y: auto;
+    height: 100%;
+    padding: 1.5rem;
+  }
+
+  &-left {
+    background-color: #fff;
+    border-right: 1px solid $border;
+    min-height: 0;
+  }
+
+  &-right {
+    background-color: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
+.code-block {
+  position: relative;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1rem;
+  border-radius: $radius-md;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.8125rem;
+  overflow: auto;
+  margin: 0;
+  height: 100%;
+
+  pre {
+    margin: 0;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
   }
 }

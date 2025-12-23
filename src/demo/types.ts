@@ -9,4 +9,4 @@ export interface PdfItem {
 }
 
 export type DemoTab = "demo" | "docs";
-export type DemoMode = "download" | "preview";
+export type DemoMode = "download" | "preview" | "code";

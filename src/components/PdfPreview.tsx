@@ -13,8 +13,8 @@ export interface PdfPreviewProps
 }
 
 export const PdfPreview: React.FC<PdfPreviewProps> = ({
-  width = "100%",
-  height = "500px",
+  width = "inherit",
+  height = "inherit",
   className,
   style,
   iframeClassName,
