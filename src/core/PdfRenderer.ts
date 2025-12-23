@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { BoxStyle, PDFOptions, TextStyle } from "./types";
-import { hexToRgb } from "./utils";
+import { hexToRgb, inScope } from "./utils";
 
 type FontStyle = "normal" | "bold" | "italic" | "bolditalic";
 
@@ -39,6 +39,13 @@ export class PdfRenderer {
   private pendingTasks: Set<Promise<any>> = new Set();
   private opQueue: Promise<void> = Promise.resolve();
   private generation = 0;
+
+  private recurringItems: Array<{
+    draw: () => void;
+    scope: any;
+    y: number;
+    height: number;
+  }> = [];
 
   constructor(opts: PDFOptions = {}) {
     this.options = opts;
@@ -126,6 +133,7 @@ export class PdfRenderer {
       const rgb = hexToRgb(this.options.color);
       if (rgb) this.pdf.setTextColor(...rgb);
     }
+    this.recurringItems = [];
   }
 
   setHeaderFooter(
@@ -158,11 +166,48 @@ export class PdfRenderer {
   addPage() {
     this.pdf.addPage();
     this.resetFlowCursor();
+
+    const currentPage = this.getPageCount();
+    // Re-draw recurring items and advance cursor
+    for (const item of this.recurringItems) {
+      if (inScope(currentPage, item.scope)) {
+        item.draw();
+        // If it starts at or above current cursor, move cursor below it
+        if (item.y + item.height > this.cursorY) {
+          this.cursorY = item.y + item.height;
+        }
+      }
+    }
   }
 
   private ensureSpace(neededHeight: number) {
     if (this.cursorY + neededHeight > this.contentBottom) {
       this.addPage();
+      return;
+    }
+
+    const currentPage = this.getPageCount();
+    let moved = true;
+    while (moved) {
+      moved = false;
+      for (const item of this.recurringItems) {
+        if (inScope(currentPage, item.scope)) {
+          // Check overlap: does [cursorY, cursorY + neededHeight] overlap with [item.y, item.y + item.height]?
+          const overlap =
+            this.cursorY < item.y + item.height &&
+            this.cursorY + neededHeight > item.y;
+          if (overlap) {
+            this.cursorY = item.y + item.height;
+            moved = true;
+
+            // After move, check if we hit page bottom
+            if (this.cursorY + neededHeight > this.contentBottom) {
+              this.addPage();
+              return;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -176,8 +221,21 @@ export class PdfRenderer {
     }
 
     if (style.color) {
-      const rgb = hexToRgb(style.color);
-      if (rgb) this.pdf.setTextColor(...rgb);
+      const color = hexToRgb(style.color);
+      if (color) {
+        this.pdf.setTextColor(color[0], color[1], color[2]);
+        // Handle alpha for text if supported via GState
+        if (color[3] !== undefined) {
+          // @ts-ignore
+          this.pdf.setGState(
+            new (this.pdf as any).GState({ opacity: color[3] })
+          );
+        } else {
+          // Reset to opaque
+          // @ts-ignore
+          this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
+        }
+      }
     }
   }
 
@@ -200,18 +258,41 @@ export class PdfRenderer {
     const s = style ?? {};
     if (s.fillColor) {
       const fillRgb = hexToRgb(s.fillColor);
-      if (fillRgb) this.pdf.setFillColor(...fillRgb);
-      this.pdf.rect(x, y, w, h, "F");
+      if (fillRgb) {
+        if (fillRgb[3] !== undefined) {
+          // @ts-ignore
+          this.pdf.setGState(
+            new (this.pdf as any).GState({ opacity: fillRgb[3] })
+          );
+        }
+        this.pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
+        this.pdf.rect(x, y, w, h, "F");
+        if (fillRgb[3] !== undefined) {
+          // @ts-ignore
+          this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
+        }
+      }
     }
     if (s.borderWidth || s.borderColor) {
       if (s.borderWidth) this.pdf.setLineWidth(s.borderWidth);
       if (s.borderColor) {
         const strokeRgb = hexToRgb(s.borderColor);
-        if (strokeRgb) this.pdf.setDrawColor(...strokeRgb);
+        if (strokeRgb) {
+          if (strokeRgb[3] !== undefined) {
+            // @ts-ignore
+            this.pdf.setGState(
+              new (this.pdf as any).GState({ opacity: strokeRgb[3] })
+            );
+          }
+          this.pdf.setDrawColor(strokeRgb[0], strokeRgb[1], strokeRgb[2]);
+        }
       }
       this.pdf.rect(x, y, w, h);
+      // Reset defaults
       this.pdf.setLineWidth(0.2);
       this.pdf.setDrawColor(0, 0, 0);
+      // @ts-ignore
+      this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
     }
   }
 
@@ -404,6 +485,15 @@ export class PdfRenderer {
   }
   getPageCount() {
     return this.pdf.getNumberOfPages();
+  }
+
+  registerRecurringItem(item: {
+    draw: () => void;
+    scope: any;
+    y: number;
+    height: number;
+  }) {
+    this.recurringItems.push(item);
   }
 
   applyHeaderFooter() {

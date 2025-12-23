@@ -47,16 +47,6 @@ export declare interface PageNumberOptions {
 
 export declare type PageNumberPreset = "page-slash-total" | "slash" | "page-of-total";
 
-export declare const PdfBox: default_2.FC<PdfBoxProps>;
-
-declare interface PdfBoxProps extends BoxStyle {
-    x?: number;
-    y?: number;
-    w?: number;
-    h?: number;
-    children?: default_2.ReactNode;
-}
-
 export declare const PdfDocument: default_2.FC<PdfDocumentProps>;
 
 declare interface PdfDocumentProps {
@@ -90,6 +80,8 @@ declare interface PdfImageProps {
     mime?: "PNG" | "JPEG";
     flow?: boolean;
     align?: "left" | "center" | "right";
+    showInAllPages?: boolean;
+    scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export declare const PdfList: default_2.FC<PdfListProps>;
@@ -150,6 +142,7 @@ export declare class PdfRenderer {
     private pendingTasks;
     private opQueue;
     private generation;
+    private recurringItems;
     constructor(opts?: PDFOptions);
     get instance(): jsPDF;
     get width(): number;
@@ -201,6 +194,12 @@ export declare class PdfRenderer {
         y: number;
     };
     getPageCount(): number;
+    registerRecurringItem(item: {
+        draw: () => void;
+        scope: any;
+        y: number;
+        height: number;
+    }): void;
     applyHeaderFooter(): void;
     measureText(text: string, style?: TextStyle, maxWidth?: number): {
         width: number;
@@ -234,6 +233,7 @@ declare interface PdfTableProps {
     rowStyle?: TextStyle & BoxStyle;
     alternateRowStyle?: TextStyle & BoxStyle;
     headerHeight?: number;
+    repeatHeader?: boolean;
 }
 
 export declare const PdfText: default_2.FC<PdfTextProps>;
@@ -252,6 +252,10 @@ declare interface PdfViewProps {
     style?: ViewStyle;
     children?: default_2.ReactNode;
     debug?: boolean;
+    x?: number;
+    y?: number;
+    w?: number;
+    h?: number;
 }
 
 declare interface TableColumn {
@@ -269,6 +273,8 @@ export declare interface TextStyle {
     align?: Align;
     verticalAlign?: "top" | "middle" | "bottom";
     lineHeight?: number;
+    showInAllPages?: boolean;
+    scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export declare interface ViewStyle extends BoxStyle {
@@ -284,6 +290,8 @@ export declare interface ViewStyle extends BoxStyle {
     marginLeft?: number;
     width?: number | string;
     height?: number;
+    showInAllPages?: boolean;
+    scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export { }

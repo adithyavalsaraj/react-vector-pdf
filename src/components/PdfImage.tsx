@@ -10,6 +10,8 @@ export interface PdfImageProps {
   mime?: "PNG" | "JPEG";
   flow?: boolean;
   align?: "left" | "center" | "right";
+  showInAllPages?: boolean;
+  scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export const PdfImage: React.FC<PdfImageProps> = ({
@@ -21,6 +23,8 @@ export const PdfImage: React.FC<PdfImageProps> = ({
   mime = "PNG",
   flow,
   align = "left",
+  showInAllPages,
+  scope,
 }) => {
   const pdf = usePdf();
 
@@ -35,22 +39,57 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     const renderY = y;
 
     pdf.queueOperation(async () => {
-      const res = await pdf.imageFromUrl(src, {
-        x: renderX,
-        y: renderY,
-        w,
-        h,
-        mime,
-        align,
-      });
+      const startPos = pdf.getCursor();
+      const draw = async (reuseX?: number, reuseY?: number) => {
+        const drawX = reuseX ?? renderX;
+        const drawY = reuseY ?? renderY;
+
+        const res = await pdf.imageFromUrl(src, {
+          x: drawX,
+          y: drawY,
+          w,
+          h,
+          mime,
+          align,
+        });
+        return res;
+      };
+
+      const res = await draw();
 
       if (isFlow && res) {
         // Move cursor down
         pdf.moveCursor(0, res.height + 2); // default spacing
       }
+
+      if (showInAllPages && res) {
+        pdf.registerRecurringItem({
+          draw: () => {
+            // Re-render image at same position
+            // Since it's async in the renderer, we just queue it
+            pdf.queueOperation(async () => {
+              if (isFlow) {
+                // In flow mode, we need to set the cursor before drawing
+                pdf.setCursor(startPos.x, startPos.y);
+              }
+              await pdf.imageFromUrl(src, {
+                x: renderX,
+                y: isFlow ? startPos.y : renderY,
+                w,
+                h,
+                mime,
+                align,
+              });
+            });
+          },
+          scope: scope ?? "all",
+          y: isFlow ? startPos.y : renderY ?? 0,
+          height: res.height + 2,
+        });
+      }
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, src, x, y, w, h, mime, flow, align]);
+  }, [pdf, src, x, y, w, h, mime, flow, align, showInAllPages, scope]);
   return null;
 };

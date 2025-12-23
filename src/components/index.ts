@@ -1,4 +1,3 @@
-export { PdfBox } from "./PdfBox";
 export { PdfImage } from "./PdfImage";
 export { PdfList } from "./PdfList";
 export { PdfPreview } from "./PdfPreview";

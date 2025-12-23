@@ -90,12 +90,14 @@ p {
     color: $text-muted;
   }
 
-  input,
-  select {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
     appearance: none;
     width: 100%;
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
+    font-family: inherit;
     color: $text-main;
     background-color: #fff;
     border: 1px solid $border;
@@ -120,6 +122,11 @@ p {
         border-radius: 4px;
       }
     }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
   }
 
   // Add a subtle down arrow for selects
@@ -194,6 +201,37 @@ ul.list-disc {
     margin-bottom: 0.5rem;
     &::marker {
       color: $primary;
+    }
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid $border;
+  width: 100%;
+  margin-bottom: 24px;
+
+  .tab-btn {
+    padding: 12px 4px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: $text-muted;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+
+    &:hover {
+      color: $text-main;
+    }
+
+    &.active {
+      color: $primary;
+      border-bottom-color: $primary;
     }
   }
 }

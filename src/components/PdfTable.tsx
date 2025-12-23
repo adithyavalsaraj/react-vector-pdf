@@ -31,6 +31,7 @@ export interface PdfTableProps {
   rowStyle?: TextStyle & BoxStyle;
   alternateRowStyle?: TextStyle & BoxStyle;
   headerHeight?: number; // min height
+  repeatHeader?: boolean;
 }
 
 export const PdfTable: React.FC<PdfTableProps> = ({
@@ -44,6 +45,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
   rowStyle,
   alternateRowStyle,
   headerHeight,
+  repeatHeader = true,
 }) => {
   const pdf = usePdf();
 
@@ -311,7 +313,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
             pdf.addPage();
             currentY = pdf.getCursor().y;
             // Header Repeat
-            if (headerHeight !== 0) {
+            if (repeatHeader && (headerHeight ?? 10) !== 0) {
               let hx = startX;
               columns.forEach((col, i) => {
                 const w = colWidths[i];

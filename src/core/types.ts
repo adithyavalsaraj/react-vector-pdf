@@ -22,6 +22,8 @@ export interface TextStyle {
   align?: Align;
   verticalAlign?: "top" | "middle" | "bottom";
   lineHeight?: number;
+  showInAllPages?: boolean;
+  scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export interface BoxStyle {
@@ -48,6 +50,8 @@ export interface ViewStyle extends BoxStyle {
   marginLeft?: number;
   width?: number | string; // mm or '100%'
   height?: number; // mm
+  showInAllPages?: boolean;
+  scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 export type PageNumberPreset =

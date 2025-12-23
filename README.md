@@ -188,18 +188,15 @@ Embed images (JPEG/PNG).
 <PdfImage src="https://example.com/logo.png" h={20} align="center" />
 ```
 
-### 4. `PdfView` & `PdfBox`
+### 4. `PdfView`
 
-Containers for grouping content, adding borders, backgrounds, or margins/padding.
+A container component for grouping content, adding borders, backgrounds, or margins/padding. It is the primary container for both flow and absolute layouts.
 
-`PdfView` is akin to a block-level `div`, and `PdfBox` is similar but allows explicit positioning.
+**Props:**
 
-**Styling Support:**
-
-- `margin` / `padding`: Shorthand (number or object `{top, right...}`).
-- **Granular Props**: `marginTop`, `marginBottom`, `paddingLeft`, `paddingRight`, etc.
-- `borderWidth`, `borderColor`: Draw borders.
-- `fillColor`: Background color.
+- `style`: Object with `margin`, `padding` (granular: `marginTop`, `paddingLeft` etc.), `borderWidth`, `borderColor`, `fillColor`, `radius`.
+- `x`, `y`, `w`, `h`: Optional props for **absolute positioning**. If provided, the view will be placed at exactly these coordinates.
+- `children`: Nested components to render inside the view.
 
 ```tsx
 <PdfView

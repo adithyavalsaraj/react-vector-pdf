@@ -7,6 +7,10 @@ export interface PdfViewProps {
   style?: ViewStyle;
   children?: React.ReactNode;
   debug?: boolean;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
 }
 
 // Reuse logic for resolving margin similar to padding
@@ -24,7 +28,14 @@ function resolveMargin(
   };
 }
 
-export const PdfView: React.FC<PdfViewProps> = ({ style = {}, children }) => {
+export const PdfView: React.FC<PdfViewProps> = ({
+  style = {},
+  children,
+  x,
+  y,
+  w,
+  h,
+}) => {
   const pdf = usePdf();
   const basePad = resolvePadding(style.padding);
   const pad = {
@@ -43,26 +54,39 @@ export const PdfView: React.FC<PdfViewProps> = ({ style = {}, children }) => {
   };
 
   // Mutable state to share between start (setup) and end (draw)
-  const viewState = React.useRef<{ start?: { x: number; y: number } }>(
-    {}
-  ).current;
+  const viewState = React.useRef<{
+    start?: { x: number; y: number };
+    isAbsolute?: boolean;
+  }>({}).current;
 
   // 1. Setup Phase: Move cursor for margin, prepare start pos
   React.useEffect(() => {
     pdf.queueOperation(() => {
-      // Add Margin Top
-      if (margin.top > 0) {
-        pdf.moveCursor(0, margin.top);
+      if (
+        typeof x === "number" &&
+        typeof y === "number" &&
+        typeof w === "number" &&
+        typeof h === "number"
+      ) {
+        viewState.isAbsolute = true;
+        viewState.start = { x, y };
+        pdf.setCursor(x + pad.left, y + pad.top);
+      } else {
+        viewState.isAbsolute = false;
+        // Add Margin Top
+        if (margin.top > 0) {
+          pdf.moveCursor(0, margin.top);
+        }
+
+        const start = pdf.getCursor();
+        viewState.start = { ...start };
+
+        // Move cursor inside for content (Padding)
+        pdf.setCursor(start.x + pad.left, start.y + pad.top);
       }
-
-      const start = pdf.getCursor();
-      viewState.start = { ...start };
-
-      // Move cursor inside for content (Padding)
-      pdf.setCursor(start.x + pad.left, start.y + pad.top);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf]); // Run once on mount
+  }, [pdf, x, y, w, h]); // Run on mount or when pos changes
 
   return (
     <React.Fragment>
@@ -72,6 +96,8 @@ export const PdfView: React.FC<PdfViewProps> = ({ style = {}, children }) => {
         style={style}
         pad={pad}
         margin={margin}
+        w={w}
+        h={h}
       />
     </React.Fragment>
   );
@@ -79,11 +105,13 @@ export const PdfView: React.FC<PdfViewProps> = ({ style = {}, children }) => {
 
 // 2. Finisher Phase: Draw box background/border and handle bottom margin
 const PdfViewFinisher: React.FC<{
-  viewState: { start?: { x: number; y: number } };
+  viewState: { start?: { x: number; y: number }; isAbsolute?: boolean };
   style: ViewStyle;
   pad: { top: number; right: number; bottom: number; left: number };
   margin: { top: number; right: number; bottom: number; left: number };
-}> = ({ viewState, style, pad, margin }) => {
+  w?: number;
+  h?: number;
+}> = ({ viewState, style, pad, margin, w, h }) => {
   const pdf = usePdf();
 
   React.useEffect(() => {
@@ -93,41 +121,48 @@ const PdfViewFinisher: React.FC<{
 
       const after = pdf.getCursor();
       // Calculate content height consumed by children
-      // Note: children might have advanced Y.
       const contentHeight = Math.max(after.y - start.y - pad.top, 0);
 
-      let boxH = contentHeight + pad.top + pad.bottom;
+      let boxH = h ?? contentHeight + pad.top + pad.bottom;
 
-      // Fixed height override?
+      // Fixed height override from style?
       if (style.height) {
         boxH = style.height;
       }
 
-      // Draw the box (Border/Background)
-      // Note: currently strictly mostly block-level width (full width)
-      // If width is specified in style, use it.
-      let boxW = pdf.contentAreaWidth;
+      let boxW = w ?? pdf.contentAreaWidth;
       if (typeof style.width === "number") {
         boxW = style.width;
       }
-      // If percentage strings are supported later, handle here.
-      // For now, assume auto-width = full width (like div).
 
-      // Draw the box shape
-      // We pass the styles (borderColor, borderWidth, fillColor, radius)
-      if (style.borderColor || style.fillColor || style.borderWidth) {
-        pdf.box(start.x, start.y, boxW, boxH, style);
+      // Draw the box shape (Border/Background)
+      const drawBox = () => {
+        if (style.borderColor || style.fillColor || style.borderWidth) {
+          pdf.box(start.x, start.y, boxW, boxH, style);
+        }
+      };
+
+      drawBox();
+
+      if (style.showInAllPages) {
+        pdf.registerRecurringItem({
+          draw: drawBox,
+          scope: style.scope ?? "all",
+          y: start.y,
+          height: boxH,
+        });
       }
 
-      // Set cursor to after box (taking into account marginBottom)
-      // Ensure we are below the box
-      const finalY = start.y + boxH + margin.bottom;
-
-      // X should reset to start X usually (block behavior)
-      pdf.setCursor(start.x, finalY);
+      if (viewState.isAbsolute) {
+        // Do not move flow cursor for absolute positioning
+      } else {
+        // Set cursor to after box (taking into account marginBottom)
+        const finalY = start.y + boxH + margin.bottom;
+        pdf.setCursor(start.x, finalY);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf]);
+  }, [pdf, style.showInAllPages, style.scope, w, h]);
 
   return null;
 };
