@@ -9,6 +9,8 @@ export interface PdfImageProps {
   h?: number;
   mime?: "PNG" | "JPEG";
   flow?: boolean;
+  layout?: "fixed" | "flow";
+  sizing?: "fit" | "fill" | "auto";
   align?: "left" | "center" | "right";
   showInAllPages?: boolean;
   scope?: "all" | "first-only" | "except-first" | number[];
@@ -18,10 +20,12 @@ export const PdfImage: React.FC<PdfImageProps> = ({
   src,
   x,
   y,
-  w,
+  w: propW,
   h,
   mime = "PNG",
   flow,
+  layout,
+  sizing,
   align = "left",
   showInAllPages,
   scope,
@@ -30,7 +34,20 @@ export const PdfImage: React.FC<PdfImageProps> = ({
 
   React.useEffect(() => {
     // Determine if we are in absolute or flow mode
-    const isFlow = flow === true || (x === undefined && y === undefined);
+    // Determine if we are in absolute or flow mode
+    const isFlow =
+      layout === "flow" ||
+      flow === true ||
+      (x === undefined && y === undefined && layout !== "fixed");
+
+    // Sizing logic
+    let renderW = propW;
+    if (sizing === "fill") {
+      renderW = pdf.contentAreaWidth;
+    } else if (sizing === "fit" && !propW) {
+      // fit behavior (default) limit to content width if larger?
+      // For now, if auto, we leave undefined. if fill, we force contentWidth.
+    }
 
     // Pass undefined coordinates to renderer if they are missing
     // Renderer will handle alignment fallback if x is missing
@@ -47,7 +64,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
         const res = await pdf.imageFromUrl(src, {
           x: drawX,
           y: drawY,
-          w,
+          w: renderW,
           h,
           mime,
           align,
@@ -75,7 +92,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
               await pdf.imageFromUrl(src, {
                 x: renderX,
                 y: isFlow ? startPos.y : renderY,
-                w,
+                w: renderW,
                 h,
                 mime,
                 align,
@@ -90,6 +107,20 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, src, x, y, w, h, mime, flow, align, showInAllPages, scope]);
+  }, [
+    pdf,
+    src,
+    x,
+    y,
+    propW,
+    h,
+    mime,
+    flow,
+    layout,
+    sizing,
+    align,
+    showInAllPages,
+    scope,
+  ]);
   return null;
 };

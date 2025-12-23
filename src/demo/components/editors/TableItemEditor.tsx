@@ -57,7 +57,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
             </div>
           ))}
           <button
-            className="btn btn-xs"
+            className="btn btn-sm mt-2"
             onClick={() => {
               const newCols = [...columns, { header: "New", accessor: "key" }];
               onChange({ columns: newCols });
@@ -190,7 +190,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
             </div>
           ))}
           <button
-            className="btn btn-xs"
+            className="btn btn-sm mt-2"
             onClick={() => {
               const newRow: any = {};
               columns.forEach((c: any) => {
@@ -205,21 +205,24 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
       </div>
 
       <div className="control card p-3 bg-white border">
-        <label className="hstack gap-3 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            className="w-5 h-5"
-            checked={props.repeatHeader !== false}
-            onChange={(e) => onChange({ repeatHeader: e.target.checked })}
-          />
-          <div className="vstack gap-0">
+        <label className="cursor-pointer w-fit">
+          <div className="hstack gap-2 items-center">
+            <input
+              type="checkbox"
+              className="w-5 h-5"
+              checked={props.repeatHeader !== false}
+              onChange={(e) => onChange({ repeatHeader: e.target.checked })}
+            />
             <strong className="text-sm">Repeat Header on new pages</strong>
-            <p className="text-xs text-muted mb-0">
-              If unchecked, the header row will only appear on the first page of
-              the table.
-            </p>
           </div>
         </label>
+
+        <div className="vstack gap-0">
+          <p className="text-xs text-muted mb-0">
+            If unchecked, the header row will only appear on the first page of
+            the table.
+          </p>
+        </div>
       </div>
     </div>
   );

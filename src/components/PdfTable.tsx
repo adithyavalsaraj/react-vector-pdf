@@ -32,6 +32,7 @@ export interface PdfTableProps {
   alternateRowStyle?: TextStyle & BoxStyle;
   headerHeight?: number; // min height
   repeatHeader?: boolean;
+  striped?: boolean;
 }
 
 export const PdfTable: React.FC<PdfTableProps> = ({
@@ -46,6 +47,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
   alternateRowStyle,
   headerHeight,
   repeatHeader = true,
+  striped = false,
 }) => {
   const pdf = usePdf();
 
@@ -347,8 +349,19 @@ export const PdfTable: React.FC<PdfTableProps> = ({
                 : row[col.accessor as string];
             let cSpan = 1;
             let rSpan = 1;
-            let cStyle =
-              ri % 2 === 1 && alternateRowStyle ? alternateRowStyle : rowStyle;
+
+            // Determine Row Style
+            // Priority: cell style > alternateRowStyle > striped default > rowStyle
+            let cStyle = rowStyle;
+            const isAlt = ri % 2 === 1;
+
+            if (isAlt) {
+              if (alternateRowStyle) {
+                cStyle = alternateRowStyle;
+              } else if (striped) {
+                cStyle = { ...rowStyle, fillColor: "#F9FAFB" }; // Light gray for striped
+              }
+            }
             let content = "";
 
             if (val && typeof val === "object" && val.content !== undefined) {

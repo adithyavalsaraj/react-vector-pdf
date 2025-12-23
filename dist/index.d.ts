@@ -79,6 +79,8 @@ declare interface PdfImageProps {
     h?: number;
     mime?: "PNG" | "JPEG";
     flow?: boolean;
+    layout?: "fixed" | "flow";
+    sizing?: "fit" | "fill" | "auto";
     align?: "left" | "center" | "right";
     showInAllPages?: boolean;
     scope?: "all" | "first-only" | "except-first" | number[];
@@ -234,6 +236,7 @@ declare interface PdfTableProps {
     alternateRowStyle?: TextStyle & BoxStyle;
     headerHeight?: number;
     repeatHeader?: boolean;
+    striped?: boolean;
 }
 
 export declare const PdfText: default_2.FC<PdfTextProps>;

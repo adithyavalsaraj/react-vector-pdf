@@ -1,30 +1,27 @@
-import React from "react";
 import { ColorPicker } from "../ColorPicker";
 
-export interface CenterLabelSettingsProps {
+interface FooterSettingsProps {
   enabled: boolean;
   setEnabled: (val: boolean) => void;
-  pos: "header" | "footer";
-  setPos: (val: "header" | "footer") => void;
   text: string;
   setText: (val: string) => void;
-  scope: string;
+  align: "left" | "center" | "right";
+  setAlign: (val: "left" | "center" | "right") => void;
+  color: string;
+  setColor: (val: string) => void;
+  fontSize: string;
+  setFontSize: (val: string) => void;
+  border: boolean;
+  setBorder: (val: boolean) => void;
+  borderColor: string;
+  setBorderColor: (val: string) => void;
+  scope: "all" | "first-only" | "except-first" | "custom";
   setScope: (val: any) => void;
   customPages: string;
   setCustomPages: (val: string) => void;
-  y: string;
-  setY: (val: string) => void;
-  offsetX: string;
-  setOffsetX: (val: string) => void;
-  fontSize: string;
-  setFontSize: (val: string) => void;
-  color: string;
-  setColor: (val: string) => void;
 }
 
-export const CenterLabelSettings: React.FC<CenterLabelSettingsProps> = (
-  props
-) => {
+export const FooterSettings: React.FC<FooterSettingsProps> = (props) => {
   return (
     <div className="card p-4 border rounded-md">
       <div
@@ -36,15 +33,15 @@ export const CenterLabelSettings: React.FC<CenterLabelSettingsProps> = (
           <input
             className="w-5 h-5"
             type="checkbox"
-            id="clEnabled"
+            id="footerEnabled"
             checked={props.enabled}
             onChange={(e) => props.setEnabled(e.target.checked)}
           />
           <label
-            htmlFor="clEnabled"
+            htmlFor="footerEnabled"
             className="text-sm font-bold uppercase text-muted m-0"
           >
-            Center Label
+            Footer Settings
           </label>
         </div>
         {props.enabled && (
@@ -63,9 +60,9 @@ export const CenterLabelSettings: React.FC<CenterLabelSettingsProps> = (
               <input
                 className="input-sm"
                 style={{ width: "120px" }}
-                placeholder="e.g., 2,3"
                 value={props.customPages}
                 onChange={(e) => props.setCustomPages(e.target.value)}
+                placeholder="e.g. 2,5"
               />
             )}
           </div>
@@ -75,53 +72,58 @@ export const CenterLabelSettings: React.FC<CenterLabelSettingsProps> = (
       {props.enabled && (
         <div className="grid grid-3">
           <div className="control">
-            <label>Position</label>
-            <select
-              value={props.pos}
-              onChange={(e) => props.setPos(e.target.value as any)}
-            >
-              <option value="header">Header</option>
-              <option value="footer">Footer</option>
-            </select>
-          </div>
-          <div className="control">
             <label>Text</label>
             <input
               value={props.text}
               onChange={(e) => props.setText(e.target.value)}
             />
           </div>
-
           <div className="control">
-            <label>Y (mm)</label>
-            <input
-              placeholder="auto"
-              value={props.y}
-              onChange={(e) => props.setY(e.target.value)}
-            />
-          </div>
-
-          <div className="control">
-            <label>OffsetX (mm)</label>
-            <input
-              placeholder="0"
-              value={props.offsetX}
-              onChange={(e) => props.setOffsetX(e.target.value)}
-            />
+            <label>Align</label>
+            <select
+              value={props.align}
+              onChange={(e) => props.setAlign(e.target.value as any)}
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
           </div>
           <div className="control">
             <label>Font Size</label>
             <input
-              placeholder="10"
               value={props.fontSize}
               onChange={(e) => props.setFontSize(e.target.value)}
+              placeholder="9"
             />
           </div>
           <ColorPicker
-            label="Color"
+            label="Text Color"
             value={props.color}
             onChange={(val) => props.setColor(val || "#000000")}
           />
+
+          <div className="control col-span-3 hstack gap-4 items-end border-t pt-2 mt-2">
+            <div className="hstack gap-2 items-center">
+              <input
+                className="w-5 h-5"
+                type="checkbox"
+                id="footerBorder"
+                checked={props.border}
+                onChange={(e) => props.setBorder(e.target.checked)}
+              />
+              <label htmlFor="footerBorder">Show Top Border</label>
+            </div>
+            {props.border && (
+              <div className="flex-1">
+                <ColorPicker
+                  label="Border Color"
+                  value={props.borderColor}
+                  onChange={(val) => props.setBorderColor(val || "#e5e7eb")}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

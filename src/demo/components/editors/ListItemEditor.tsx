@@ -39,14 +39,14 @@ export const ListItemEditor: React.FC<ListItemEditorProps> = ({
           </div>
         ))}
         <button
-          className="btn btn-sm"
+          className="btn btn-sm mt-2"
           onClick={() => {
             onChange({ items: [...items, "New Item"] });
           }}
         >
           + Add Item
         </button>
-        <label className="mt-2 hstack gap-2 cursor-pointer select-none items-center">
+        <label className="mt-2 hstack gap-2 cursor-pointer items-center">
           <input
             type="checkbox"
             className="w-5 h-5"

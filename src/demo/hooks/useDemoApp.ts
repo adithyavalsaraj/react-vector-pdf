@@ -48,10 +48,42 @@ export const useDemoApp = () => {
   const [clColor, setClColor] = useState<string>("#9CA3AF");
 
   // New Features config
-  const [imgLayout, setImgLayout] = useState<"flow" | "absolute">("flow");
-  const [imgSizing, setImgSizing] = useState<"auto" | "fixed">("auto");
+  const [imgEnabled, setImgEnabled] = useState(false);
+  const [imgLayout, setImgLayout] = useState<"fixed" | "flow">("fixed");
+  const [imgSizing, setImgSizing] = useState<"fit" | "fill" | "auto">("fit");
+
+  const [headerEnabled, setHeaderEnabled] = useState(true);
+  const [headerText, setHeaderText] = useState("react-vector-pdf — Demo");
+  const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">(
+    "left"
+  );
+  const [headerColor, setHeaderColor] = useState("#111827");
+  const [headerFontSize, setHeaderFontSize] = useState("10");
+  const [headerBorder, setHeaderBorder] = useState(true);
+  const [headerBorderColor, setHeaderBorderColor] = useState("#e5e7eb");
+  const [headerScope, setHeaderScope] = useState<
+    "all" | "first-only" | "except-first" | "custom"
+  >("all");
+  const [headerCustomPages, setHeaderCustomPages] = useState("");
+
+  const [footerEnabled, setFooterEnabled] = useState(true);
+  const [footerText, setFooterText] = useState("");
+  const [footerAlign, setFooterAlign] = useState<"left" | "center" | "right">(
+    "left"
+  );
+  const [footerColor, setFooterColor] = useState("#9CA3AF");
+  const [footerFontSize, setFooterFontSize] = useState("9");
+  const [footerBorder, setFooterBorder] = useState(false);
+  const [footerBorderColor, setFooterBorderColor] = useState("#e5e7eb");
+  const [footerScope, setFooterScope] = useState<
+    "all" | "first-only" | "except-first" | "custom"
+  >("all");
+  const [footerCustomPages, setFooterCustomPages] = useState("");
+
+  const [filename, setFilename] = useState("react-vector-pdf-demo");
 
   // Table config
+  const [tableEnabled, setTableEnabled] = useState(false);
   const [tableStriped, setTableStriped] = useState(true);
   const [tableBorderWidth, setTableBorderWidth] = useState("0.1");
   const [tableHeaderColor, setTableHeaderColor] = useState("#f3f4f6");
@@ -198,16 +230,62 @@ export const useDemoApp = () => {
     setClFontSize,
     clColor,
     setClColor,
+    imgEnabled,
+    setImgEnabled,
     imgLayout,
     setImgLayout,
     imgSizing,
     setImgSizing,
+    tableEnabled,
+    setTableEnabled,
     tableStriped,
     setTableStriped,
     tableBorderWidth,
     setTableBorderWidth,
     tableHeaderColor,
     setTableHeaderColor,
+
+    headerEnabled,
+    setHeaderEnabled,
+    headerText,
+    setHeaderText,
+    headerAlign,
+    setHeaderAlign,
+    headerColor,
+    setHeaderColor,
+    headerFontSize,
+    setHeaderFontSize,
+    headerBorder,
+    setHeaderBorder,
+    headerBorderColor,
+    setHeaderBorderColor,
+    headerScope,
+    setHeaderScope,
+    headerCustomPages,
+    setHeaderCustomPages,
+
+    footerEnabled,
+    setFooterEnabled,
+    footerText,
+    setFooterText,
+    footerAlign,
+    setFooterAlign,
+    footerColor,
+    setFooterColor,
+    footerFontSize,
+    setFooterFontSize,
+    footerBorder,
+    setFooterBorder,
+    footerBorderColor,
+    setFooterBorderColor,
+    footerScope,
+    setFooterScope,
+    footerCustomPages,
+    setFooterCustomPages,
+
+    filename,
+    setFilename,
+
     items,
     setItems,
     addItem,

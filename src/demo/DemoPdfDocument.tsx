@@ -2,7 +2,11 @@ import React from "react";
 import { PdfDocument } from "../components";
 import { DemoPdfContent } from "./components/DemoPdfContent";
 import { PdfItem } from "./types";
-import { demoFooter, demoHeader, parsePages } from "./utils/pdfHelpers";
+import {
+  createFooterRenderer,
+  createHeaderRenderer,
+  parsePages,
+} from "./utils/pdfHelpers";
 
 export interface DemoPdfProps {
   pnEnabled: boolean;
@@ -29,6 +33,27 @@ export interface DemoPdfProps {
   items: PdfItem[];
   onReady: (pdf: any) => void;
   filename: string;
+  imgLayout?: "fixed" | "flow";
+  imgSizing?: "fit" | "fill" | "auto";
+  tableStriped?: boolean;
+  tableBorderWidth?: string;
+  tableHeaderColor?: string;
+  // Header Props
+  headerEnabled: boolean;
+  headerText: string;
+  headerAlign: "left" | "center" | "right";
+  headerColor: string;
+  headerFontSize: string;
+  headerBorder: boolean;
+  headerBorderColor: string;
+  // Footer Props
+  footerEnabled: boolean;
+  footerText: string;
+  footerAlign: "left" | "center" | "right";
+  footerColor: string;
+  footerFontSize: string;
+  footerBorder: boolean;
+  footerBorderColor: string;
 }
 
 export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
@@ -56,9 +81,48 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
   items,
   onReady,
   filename,
+  imgLayout,
+  imgSizing,
+  tableStriped,
+  tableBorderWidth,
+  tableHeaderColor,
+  headerEnabled,
+  headerText,
+  headerAlign,
+  headerColor,
+  headerFontSize,
+  headerBorder,
+  headerBorderColor,
+  footerEnabled,
+  footerText,
+  footerAlign,
+  footerColor,
+  footerFontSize,
+  footerBorder,
+  footerBorderColor,
 }) => {
   const pnScopeVal = pnScope === "custom" ? parsePages(pnCustomPages) : pnScope;
   const clScopeVal = clScope === "custom" ? parsePages(clCustomPages) : clScope;
+
+  const headerRenderer = createHeaderRenderer({
+    enabled: headerEnabled,
+    text: headerText,
+    align: headerAlign,
+    color: headerColor,
+    fontSize: headerFontSize,
+    border: headerBorder,
+    borderColor: headerBorderColor,
+  });
+
+  const footerRenderer = createFooterRenderer({
+    enabled: footerEnabled,
+    text: footerText,
+    align: footerAlign,
+    color: footerColor,
+    fontSize: footerFontSize,
+    border: footerBorder,
+    borderColor: footerBorderColor,
+  });
 
   return (
     <PdfDocument
@@ -68,8 +132,8 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
         color: "#111827",
         lineHeight: 1.35,
       }}
-      header={demoHeader}
-      footer={demoFooter}
+      header={headerRenderer}
+      footer={footerRenderer}
       pageNumbers={{
         enabled: pnEnabled,
         position: pnPos,
@@ -101,7 +165,14 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
       filename={filename}
       autoSave={false}
     >
-      <DemoPdfContent items={items} />
+      <DemoPdfContent
+        items={items}
+        imgLayout={imgLayout}
+        imgSizing={imgSizing}
+        tableStriped={tableStriped}
+        tableBorderWidth={tableBorderWidth}
+        tableHeaderColor={tableHeaderColor}
+      />
     </PdfDocument>
   );
 };
