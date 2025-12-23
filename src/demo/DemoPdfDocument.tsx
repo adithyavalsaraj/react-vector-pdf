@@ -1,90 +1,9 @@
 import React from "react";
-import {
-  PdfDocument,
-  PdfImage,
-  PdfList,
-  PdfTable,
-  PdfText,
-  PdfView,
-} from "../components";
-import { PdfRenderer } from "../core/PdfRenderer";
+import { PdfDocument } from "../components";
+import { DemoPdfContent } from "./components/DemoPdfContent";
+import { PdfItem } from "./types";
+import { demoFooter, demoHeader, parsePages } from "./utils/pdfHelpers";
 
-const lipsum = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.
-Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi.
-Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.
-Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim.`;
-
-export type PdfItemType = "text" | "image" | "list" | "table" | "view";
-
-export interface PdfItem {
-  id: string;
-  type: PdfItemType;
-  props: any;
-  showInAllPages?: boolean;
-  scope?: any;
-}
-
-export interface DemoPdfContentProps {
-  items: PdfItem[];
-}
-
-export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({ items }) => {
-  const renderItem = (item: PdfItem) => {
-    const common = {
-      showInAllPages: item.showInAllPages,
-      scope: item.scope,
-    };
-
-    switch (item.type) {
-      case "text":
-        return (
-          <PdfText key={item.id} {...item.props} {...common}>
-            {item.props.children}
-          </PdfText>
-        );
-      case "image":
-        return <PdfImage key={item.id} {...item.props} {...common} />;
-      case "list":
-        return <PdfList key={item.id} {...item.props} {...common} />;
-      case "table":
-        return <PdfTable key={item.id} {...item.props} {...common} />;
-      case "view":
-        return (
-          <PdfView key={item.id} {...item.props} {...common}>
-            {typeof item.props.children === "string" ? (
-              <PdfText>{item.props.children}</PdfText>
-            ) : (
-              item.props.children
-            )}
-          </PdfView>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return <>{items.map(renderItem)}</>;
-};
-
-function header(renderer: PdfRenderer, page: number, total: number) {
-  const pdf = renderer.instance;
-  pdf.setFontSize(10);
-  pdf.text("react-vector-pdf — Demo", renderer.contentLeft, 10);
-  pdf.setLineWidth(0.2);
-  pdf.line(renderer.contentLeft, 12, renderer.contentRight, 12);
-}
-
-function footer(renderer: PdfRenderer, page: number, total: number) {
-  const pdf = renderer.instance;
-  pdf.setFontSize(9);
-  pdf.setTextColor(120);
-  pdf.text(
-    "Generated with jsPDF (vector text, selectable)",
-    renderer.contentLeft,
-    renderer.height - 7
-  );
-}
 export interface DemoPdfProps {
   pnEnabled: boolean;
   pnPos: "header" | "footer";
@@ -111,6 +30,7 @@ export interface DemoPdfProps {
   onReady: (pdf: any) => void;
   filename: string;
 }
+
 export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
   pnEnabled,
   pnPos,
@@ -137,14 +57,6 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
   onReady,
   filename,
 }) => {
-  const parsePages = (value: string) => {
-    const arr = value
-      .split(",")
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n) && n > 0);
-    return arr.length ? arr : undefined;
-  };
-
   const pnScopeVal = pnScope === "custom" ? parsePages(pnCustomPages) : pnScope;
   const clScopeVal = clScope === "custom" ? parsePages(clCustomPages) : clScope;
 
@@ -156,8 +68,8 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
         color: "#111827",
         lineHeight: 1.35,
       }}
-      header={header}
-      footer={footer}
+      header={demoHeader}
+      footer={demoFooter}
       pageNumbers={{
         enabled: pnEnabled,
         position: pnPos,
