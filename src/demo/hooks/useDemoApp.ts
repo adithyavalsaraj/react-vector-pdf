@@ -3,7 +3,7 @@ import { DemoMode, DemoTab, PdfItem, PdfItemType } from "../types";
 
 export const useDemoApp = () => {
   const [activeTab, setActiveTab] = useState<DemoTab>("demo");
-  const [mode, setMode] = useState<DemoMode>("download");
+  const [mode, setMode] = useState<DemoMode>("preview");
   const [downloading, setDownloading] = useState(false);
   const [previewConfig, setPreviewConfig] = useState<any>(null);
 

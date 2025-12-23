@@ -11,7 +11,7 @@ export const BuilderControls: React.FC<BuilderControlsProps> = ({
   onClearAll,
 }) => {
   return (
-    <div className="hstack gap-2 wrap mb-4">
+    <div className="hstack gap-2 wrap">
       <button className="btn btn-sm" onClick={() => onAddItem("text")}>
         + Text
       </button>

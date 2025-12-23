@@ -44,7 +44,7 @@ export const BuilderItem: React.FC<BuilderItemProps> = ({
   };
 
   return (
-    <div className="builder-item card p-3 border">
+    <div className="builder-item card p-3 border rounded">
       <div className="hstack justify-between mb-2">
         <strong>
           {index + 1}. {item.type.toUpperCase()}

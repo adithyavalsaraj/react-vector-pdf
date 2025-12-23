@@ -7,6 +7,7 @@ import { CodeBlock } from "./components/CodeBlock";
 import { DemoPdfContent } from "./components/DemoPdfContent";
 import { DocsContent } from "./components/DocsContent";
 import { Tabs } from "./components/Tabs";
+import { ViewToggle } from "./components/ViewToggle";
 import { CenterLabelSettings } from "./components/settings/CenterLabelSettings";
 import { ImageSettings } from "./components/settings/ImageSettings";
 import { PageNumberSettings } from "./components/settings/PageNumberSettings";
@@ -244,7 +245,7 @@ export const DemoApp: React.FC = () => {
           <div className="pane-left pane-scrollable">
             <div className="vstack gap-4">
               <div className="vstack">
-                <div className="hstack justify-between items-center">
+                <div className="hstack justify-between items-center sticky-top">
                   <h3 className="text-sm font-bold uppercase text-muted m-0">
                     Content
                   </h3>
@@ -255,12 +256,14 @@ export const DemoApp: React.FC = () => {
                     />
                   </div>
                 </div>
-                <BuilderList
-                  items={items}
-                  onRemove={removeItem}
-                  onUpdate={updateItem}
-                  onUpdateProps={updateItemProps}
-                />
+                {items.length > 0 && (
+                  <BuilderList
+                    items={items}
+                    onRemove={removeItem}
+                    onUpdate={updateItem}
+                    onUpdateProps={updateItemProps}
+                  />
+                )}
               </div>
 
               <div className="hr"></div>
@@ -341,22 +344,7 @@ export const DemoApp: React.FC = () => {
           <div className="pane-right">
             {/* Header */}
             <div className="hstack justify-between p-3 border-bottom bg-white justify-center">
-              <div className="hstack gap-2">
-                <button
-                  className={`tab-btn ${mode === "preview" ? "active" : ""}`}
-                  onClick={() => setMode("preview")}
-                  style={{ fontSize: "0.9rem", padding: "0.5rem" }}
-                >
-                  Live Preview
-                </button>
-                <button
-                  className={`tab-btn ${mode === "download" ? "active" : ""}`}
-                  onClick={() => setMode("code" as any)}
-                  style={{ fontSize: "0.9rem", padding: "0.5rem" }}
-                >
-                  View Code
-                </button>
-              </div>
+              <ViewToggle mode={mode} setMode={setMode} />
               <div className="hstack gap-2">
                 <button
                   className={`btn btn-sm ${downloading ? "loading" : ""}`}
