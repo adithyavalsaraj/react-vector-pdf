@@ -14,28 +14,45 @@ export function resolvePadding(
 }
 
 export function hexToRgb(
-  hex: string
-): [number, number, number, number?] | null {
-  const s = hex.replace("#", "");
-  if (s.length === 3) {
-    const r = parseInt(s[0] + s[0], 16);
-    const g = parseInt(s[1] + s[1], 16);
-    const b = parseInt(s[2] + s[2], 16);
-    return [r, g, b];
+  color: string
+): [number, number, number, number] | null {
+  if (!color) return null;
+  // Handle Hex
+  if (color.startsWith("#")) {
+    const s = color.replace("#", "");
+    if (s.length === 3) {
+      const r = parseInt(s[0] + s[0], 16);
+      const g = parseInt(s[1] + s[1], 16);
+      const b = parseInt(s[2] + s[2], 16);
+      return [r, g, b, 1];
+    }
+    if (s.length === 6) {
+      const r = parseInt(s.slice(0, 2), 16);
+      const g = parseInt(s.slice(2, 4), 16);
+      const b = parseInt(s.slice(4, 6), 16);
+      return [r, g, b, 1];
+    }
+    if (s.length === 8) {
+      const r = parseInt(s.slice(0, 2), 16);
+      const g = parseInt(s.slice(2, 4), 16);
+      const b = parseInt(s.slice(4, 6), 16);
+      const a = parseInt(s.slice(6, 8), 16) / 255;
+      return [r, g, b, a];
+    }
   }
-  if (s.length === 6) {
-    const r = parseInt(s.slice(0, 2), 16);
-    const g = parseInt(s.slice(2, 4), 16);
-    const b = parseInt(s.slice(4, 6), 16);
-    return [r, g, b];
-  }
-  if (s.length === 8) {
-    const r = parseInt(s.slice(0, 2), 16);
-    const g = parseInt(s.slice(2, 4), 16);
-    const b = parseInt(s.slice(4, 6), 16);
-    const a = parseInt(s.slice(6, 8), 16) / 255;
+
+  // Handle rgba(r, g, b, a) or rgb(r, g, b)
+  const match = color.match(
+    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/
+  );
+  if (match) {
+    const r = parseInt(match[1], 10);
+    const g = parseInt(match[2], 10);
+    const b = parseInt(match[3], 10);
+    const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
     return [r, g, b, a];
   }
+
   return null;
 }
 

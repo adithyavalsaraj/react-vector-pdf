@@ -21,15 +21,22 @@ export const PdfList: React.FC<PdfListProps> = ({
 }) => {
   const pdf = usePdf();
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     pdf.queueOperation(() => {
       items.forEach((item, idx) => {
-        // Check space logic implicitly handled by paragraph() mostly,
-        // but drawing marker needs care if page break happens inside paragraph?
-        // Actually, if we just draw marker at current Y, and paragraph moves to next page?
-        // Risky. Ideally we should check space for at least one line.
-
         const marker = ordered ? `${idx + 1}.` : "•";
+        const fontSize = style?.fontSize ?? pdf.baseFont.size;
+
+        // Check if we have space for at least one line of text
+        // This prevents the marker from being drawn on the current page
+        // while the text is pushed to the next page.
+        // We use a safe approximation of line height.
+        const lineHeight = fontSize * 1.2 * 0.3528; // mm approx
+        const currentY = pdf.getCursor().y;
+
+        if (currentY + lineHeight > pdf.contentBottom) {
+          pdf.addPage();
+        }
 
         const startY = pdf.getCursor().y;
         const startX = pdf.getCursor().x;
@@ -37,7 +44,6 @@ export const PdfList: React.FC<PdfListProps> = ({
 
         // Calculate baseline offset to align with paragraph text
         // Paragraph logic: textY = cursorY + fontSize * 0.3528
-        const fontSize = style?.fontSize ?? pdf.baseFont.size;
         const textY = startY + fontSize * 0.3528;
 
         // Draw marker

@@ -13,8 +13,9 @@ export class PdfRenderer {
   private cursorX = 0;
   private cursorY = 0;
   private contentWidth = 0;
+  private reservedBottomHeight = 0;
 
-  private margin = { top: 15, right: 15, bottom: 15, left: 15 };
+  public margin = { top: 15, right: 15, bottom: 15, left: 15 };
   private defaultFont: { name?: string; style: FontStyle; size: number } = {
     name: undefined,
     style: "normal",
@@ -40,6 +41,9 @@ export class PdfRenderer {
   private opQueue: Promise<void> = Promise.resolve();
   private generation = 0;
 
+  // Recording Stack for nested buffering
+  private recordingStack: Array<Array<() => void>> = [];
+
   private recurringItems: Array<{
     draw: () => void;
     scope: any;
@@ -48,6 +52,7 @@ export class PdfRenderer {
   }> = [];
 
   constructor(opts: PDFOptions = {}) {
+    // ... ctor ...
     this.options = opts;
     this.margin = opts.margin ?? this.margin;
     this.defaultFont = {
@@ -71,6 +76,34 @@ export class PdfRenderer {
     this.applyBaseFont();
   }
 
+  // ... getters ...
+
+  // (Keeping getters omitted for brevity in replace block if possible, but replace_file_content needs context)
+  // I will target the variable declaration area specifically.
+
+  // Implementation of Stack Methods
+  startRecording() {
+    this.recordingStack.push([]);
+  }
+
+  stopRecording() {
+    const buffer = this.recordingStack.pop();
+    return buffer || [];
+  }
+
+  playback(ops: Array<() => void>) {
+    ops.forEach((op) => op());
+  }
+
+  private drawOp(op: () => void) {
+    if (this.recordingStack.length > 0) {
+      // Push to the top-most buffer
+      this.recordingStack[this.recordingStack.length - 1].push(op);
+    } else {
+      op();
+    }
+  }
+
   get instance() {
     return this.pdf;
   }
@@ -90,7 +123,7 @@ export class PdfRenderer {
     return this.margin.top;
   }
   get contentBottom() {
-    return this.pageHeight - this.margin.bottom;
+    return this.pageHeight - this.margin.bottom - this.reservedBottomHeight;
   }
   get contentHeight() {
     return this.contentBottom - this.contentTop;
@@ -105,10 +138,62 @@ export class PdfRenderer {
     return this.defaultLineHeight;
   }
 
+  setReservedHeight(h: number) {
+    this.reservedBottomHeight = h;
+  }
+
+  private indentStack: { left: number; right: number }[] = [];
+  private currentIndent = { left: 0, right: 0 };
+
+  pushIndent(left: number, right: number) {
+    this.indentStack.push({ ...this.currentIndent });
+    this.currentIndent.left += left;
+    this.currentIndent.right += right;
+
+    // Update cursor and content width immediately
+    // Note: We don't move cursor Y, only X and constraints
+    this.cursorX += left;
+    this.contentWidth =
+      this.pageWidth -
+      this.margin.left -
+      this.margin.right -
+      this.currentIndent.left -
+      this.currentIndent.right;
+  }
+
+  popIndent() {
+    const prev = this.indentStack.pop();
+    if (prev) {
+      const diffLeft = this.currentIndent.left - prev.left;
+      this.currentIndent = prev;
+
+      // Restore cursor X (reverse the shift) if possible, or just re-calc
+      // We assume flow layout, so just shifting back is reasonable?
+      // Actually, if we are in a new line, we should reset to margin + indent.
+      // If we are mid-line... it's tricky. But usually pop happens at block end.
+
+      this.contentWidth =
+        this.pageWidth -
+        this.margin.left -
+        this.margin.right -
+        this.currentIndent.left -
+        this.currentIndent.right;
+
+      // We don't forcefully reset cursorX since we might be finishing a block,
+      // but typically we should align with new bounds.
+      // For now let's just update bounds.
+    }
+  }
+
   resetFlowCursor() {
-    this.cursorX = this.margin.left;
+    this.cursorX = this.margin.left + this.currentIndent.left;
     this.cursorY = this.margin.top;
-    this.contentWidth = this.pageWidth - this.margin.left - this.margin.right;
+    this.contentWidth =
+      this.pageWidth -
+      this.margin.left -
+      this.margin.right -
+      this.currentIndent.left -
+      this.currentIndent.right;
   }
 
   reset() {
@@ -156,15 +241,22 @@ export class PdfRenderer {
 
   private applyBaseFont() {
     const family = this.defaultFont.name ?? this.pdf.getFont().fontName;
-    this.pdf.setFont(family, this.defaultFont.style);
+    const style = this.defaultFont.style;
+    const size = this.defaultFont.size;
+    const color = this.defaultColor;
 
-    this.pdf.setFontSize(this.defaultFont.size);
-    const rgb = hexToRgb(this.defaultColor);
-    if (rgb) this.pdf.setTextColor(...rgb);
+    this.drawOp(() => {
+      this.pdf.setFont(family, style);
+      this.pdf.setFontSize(size);
+      const rgb = hexToRgb(color);
+      if (rgb) this.pdf.setTextColor(...rgb);
+    });
   }
 
   addPage() {
-    this.pdf.addPage();
+    this.drawOp(() => {
+      this.pdf.addPage();
+    });
     this.resetFlowCursor();
 
     const currentPage = this.getPageCount();
@@ -213,30 +305,36 @@ export class PdfRenderer {
 
   setTextStyle(style?: TextStyle) {
     if (!style) return;
-    if (style.fontSize) this.pdf.setFontSize(style.fontSize);
 
-    if (style.fontStyle) {
-      const family = this.pdf.getFont().fontName;
-      this.pdf.setFont(family, style.fontStyle as FontStyle);
-    }
+    // Capture values
+    const fontSize = style.fontSize;
+    const fontStyle = style.fontStyle;
+    const colorStr = style.color;
 
-    if (style.color) {
-      const color = hexToRgb(style.color);
-      if (color) {
-        this.pdf.setTextColor(color[0], color[1], color[2]);
-        // Handle alpha for text if supported via GState
-        if (color[3] !== undefined) {
-          // @ts-ignore
-          this.pdf.setGState(
-            new (this.pdf as any).GState({ opacity: color[3] })
-          );
-        } else {
-          // Reset to opaque
-          // @ts-ignore
-          this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
+    this.drawOp(() => {
+      if (fontSize) this.pdf.setFontSize(fontSize);
+
+      if (fontStyle) {
+        const family = this.pdf.getFont().fontName;
+        this.pdf.setFont(family, fontStyle as FontStyle);
+      }
+
+      if (colorStr) {
+        const color = hexToRgb(colorStr);
+        if (color) {
+          this.pdf.setTextColor(color[0], color[1], color[2]);
+          if (color[3] !== undefined) {
+            // @ts-ignore
+            this.pdf.setGState(
+              new (this.pdf as any).GState({ opacity: color[3] })
+            );
+          } else {
+            // @ts-ignore
+            this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
+          }
         }
       }
-    }
+    });
   }
 
   textRaw(
@@ -250,54 +348,74 @@ export class PdfRenderer {
     this.setTextStyle(style);
     const opts: any = { align };
     if (typeof maxWidth === "number") opts.maxWidth = maxWidth;
-    this.pdf.text(text, x, y, opts);
+    this.drawOp(() => {
+      this.pdf.text(text, x, y, opts);
+    });
     this.applyBaseFont();
   }
 
   box(x: number, y: number, w: number, h: number, style?: BoxStyle) {
     const s = style ?? {};
-    if (s.fillColor) {
-      const fillRgb = hexToRgb(s.fillColor);
-      if (fillRgb) {
-        if (fillRgb[3] !== undefined) {
-          // @ts-ignore
-          this.pdf.setGState(
-            new (this.pdf as any).GState({ opacity: fillRgb[3] })
-          );
-        }
-        this.pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
-        this.pdf.rect(x, y, w, h, "F");
-        if (fillRgb[3] !== undefined) {
-          // @ts-ignore
-          this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
-        }
-      }
-    }
-    if (s.borderWidth || s.borderColor) {
-      if (s.borderWidth) this.pdf.setLineWidth(s.borderWidth);
-      if (s.borderColor) {
-        const strokeRgb = hexToRgb(s.borderColor);
-        if (strokeRgb) {
-          if (strokeRgb[3] !== undefined) {
-            // @ts-ignore
-            this.pdf.setGState(
-              new (this.pdf as any).GState({ opacity: strokeRgb[3] })
-            );
+
+    this.drawOp(() => {
+      if (s.borderWidth || s.borderColor || s.fillColor) {
+        // Set Fill
+        if (s.fillColor) {
+          const fillRgb = hexToRgb(s.fillColor);
+          if (fillRgb) {
+            if (fillRgb[3] !== undefined) {
+              // @ts-ignore
+              this.pdf.setGState(
+                new (this.pdf as any).GState({ opacity: fillRgb[3] })
+              );
+            }
+            this.pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
           }
-          this.pdf.setDrawColor(strokeRgb[0], strokeRgb[1], strokeRgb[2]);
         }
+
+        // Set Stroke
+        if (s.borderWidth || s.borderColor) {
+          if (s.borderWidth) this.pdf.setLineWidth(s.borderWidth);
+          if (s.borderColor) {
+            const strokeRgb = hexToRgb(s.borderColor);
+            if (strokeRgb) {
+              if (strokeRgb[3] !== undefined) {
+                // @ts-ignore
+                this.pdf.setGState(
+                  new (this.pdf as any).GState({ opacity: strokeRgb[3] })
+                );
+              }
+              this.pdf.setDrawColor(strokeRgb[0], strokeRgb[1], strokeRgb[2]);
+            }
+          }
+        }
+
+        // Determine Style String (F=Fill, S=Stroke, DF=Both)
+        let styleStr = "";
+        if (s.fillColor) styleStr += "F";
+        if (s.borderWidth || s.borderColor) styleStr += "D";
+
+        if (styleStr) {
+          if (s.radius) {
+            this.pdf.roundedRect(x, y, w, h, s.radius, s.radius, styleStr);
+          } else {
+            this.pdf.rect(x, y, w, h, styleStr);
+          }
+        }
+
+        // Reset defaults
+        this.pdf.setLineWidth(0.2);
+        this.pdf.setDrawColor(0, 0, 0);
+        // @ts-ignore
+        this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
       }
-      this.pdf.rect(x, y, w, h);
-      // Reset defaults
-      this.pdf.setLineWidth(0.2);
-      this.pdf.setDrawColor(0, 0, 0);
-      // @ts-ignore
-      this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
-    }
+    });
   }
 
   line(x1: number, y1: number, x2: number, y2: number) {
-    this.pdf.line(x1, y1, x2, y2);
+    this.drawOp(() => {
+      this.pdf.line(x1, y1, x2, y2);
+    });
   }
 
   async imageFromUrl(
@@ -459,7 +577,17 @@ export class PdfRenderer {
       // Original logic used: y = cursorY + idx*lineHeight + fontSizeMm
       // So relative to current cursorY (top of line box), textY is at +fontSizeMm (approx)
       const textY = this.cursorY + fontSize * 0.3528;
-      this.pdf.text(ln, this.cursorX, textY, { align, maxWidth: width });
+
+      let textX = this.cursorX;
+      if (align === "center") {
+        textX = this.cursorX + width / 2;
+      } else if (align === "right") {
+        textX = this.cursorX + width;
+      }
+
+      this.drawOp(() => {
+        this.pdf.text(ln, textX, textY, { align, maxWidth: width });
+      });
 
       // Advance cursor
       this.cursorY += lineHeightMm;
@@ -553,5 +681,59 @@ export class PdfRenderer {
   getBlobUrl() {
     this.applyHeaderFooter();
     return this.pdf.output("bloburl");
+  }
+
+  /**
+   * Injects a filled rectangle at the beginning of the page stream.
+   * This ensures the background is drawn BEHIND all other content on the page.
+   */
+  injectFill(
+    pageNum: number,
+    rect: { x: number; y: number; w: number; h: number },
+    color: string
+  ) {
+    // @ts-ignore
+    const pages = this.pdf.internal.pages;
+    const page = pages[pageNum];
+    if (!page) return;
+
+    // @ts-ignore
+    const k = this.pdf.internal.scaleFactor;
+    // @ts-ignore
+    const pageHeight = this.pdf.internal.pageSize.getHeight();
+
+    // Convert coordinates to PDF points (Bottom-Up Y axis)
+    // x = x * k
+    // y = (pageHeight - (y + h)) * k (flip y)
+    // w = w * k
+    // h = h * k
+    const x = rect.x * k;
+    const h = rect.h * k;
+    const w = rect.w * k;
+    const y = (pageHeight - (rect.y + rect.h)) * k;
+
+    const rgb = hexToRgb(color);
+    if (!rgb) return;
+
+    const ops: string[] = ["q"]; // Save graphics state
+
+    // Set Fill Color (rg) - divide by 255
+    ops.push(
+      `${(rgb[0] / 255).toFixed(3)} ${(rgb[1] / 255).toFixed(3)} ${(
+        rgb[2] / 255
+      ).toFixed(3)} rg`
+    );
+
+    // Draw Rectangle (re) and Fill (f)
+    ops.push(
+      `${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`
+    );
+
+    ops.push("Q"); // Restore graphics state
+
+    // Prepend to page stream to ensure it's drawn first (background)
+    if (page && Array.isArray(page)) {
+      page.unshift(ops.join(" "));
+    }
   }
 }

@@ -3,6 +3,7 @@ import type { ViewStyle } from "../core/types";
 import { resolvePadding } from "../core/utils";
 import { usePdf } from "./PdfProvider";
 import { PdfViewFinisher } from "./internal/PdfViewFinisher";
+import { PdfViewInit } from "./internal/PdfViewInit";
 
 export interface PdfViewProps {
   style?: ViewStyle;
@@ -54,43 +55,24 @@ export const PdfView: React.FC<PdfViewProps> = ({
     left: style.marginLeft ?? baseMargin.left,
   };
 
-  // Mutable state to share between start (setup) and end (draw)
   const viewState = React.useRef<{
-    start?: { x: number; y: number };
+    start?: { x: number; y: number; page?: number };
     isAbsolute?: boolean;
+    radius?: number;
   }>({}).current;
 
-  // 1. Setup Phase: Move cursor for margin, prepare start pos
-  React.useEffect(() => {
-    pdf.queueOperation(() => {
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        typeof w === "number" &&
-        typeof h === "number"
-      ) {
-        viewState.isAbsolute = true;
-        viewState.start = { x, y };
-        pdf.setCursor(x + pad.left, y + pad.top);
-      } else {
-        viewState.isAbsolute = false;
-        // Add Margin Top
-        if (margin.top > 0) {
-          pdf.moveCursor(0, margin.top);
-        }
-
-        const start = pdf.getCursor();
-        viewState.start = { ...start };
-
-        // Move cursor inside for content (Padding)
-        pdf.setCursor(start.x + pad.left, start.y + pad.top);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, x, y, w, h]); // Run on mount or when pos changes
+  viewState.radius = style.radius;
 
   return (
     <React.Fragment>
+      <PdfViewInit
+        style={style}
+        x={x}
+        y={y}
+        w={w}
+        h={h}
+        viewState={viewState}
+      />
       {children}
       <PdfViewFinisher
         viewState={viewState}

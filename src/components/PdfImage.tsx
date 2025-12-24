@@ -32,7 +32,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
 }) => {
   const pdf = usePdf();
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     // Determine if we are in absolute or flow mode
     // Determine if we are in absolute or flow mode
     const isFlow =

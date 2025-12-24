@@ -16,8 +16,8 @@
 - **Advanced Components**:
   - **PdfTable**: Supports auto-wrapping, **row spans**, **col spans**, **vertical alignment**, custom cell styling, **striped rows**, and **intelligent page breaking** (keeps spanned rows together).
   - **PdfImage**: Renders images from URLs with options for flow or absolute positioning. Automatically handles page breaks in flow mode.
-  - **PdfList**: Bullet and numbered lists with auto-wrapping.
-  - **PdfView**: Container components with support for borders, background colors, and granular **padding/margin** (e.g., `paddingTop`, `marginBottom`).
+  - **PdfList**: Bullet and numbered lists with auto-wrapping and **orphan protection**.
+  - **PdfView**: Advanced container with **perfect multi-page spanning**, support for borders, background colors (rendered strictly behind content), and granular **persistent padding** (padding is maintained across page breaks).
 - **Global Document Options**:
   - **Formatting**: A4, Letter, custom sizes, portrait/landscape orientation, distinct margins, base fonts.
   - **Headers & Footers**: Custom render functions with full control.

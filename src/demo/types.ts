@@ -8,5 +8,5 @@ export interface PdfItem {
   scope?: any;
 }
 
-export type DemoTab = "demo" | "docs";
+export type DemoTab = "demo" | "docs" | "repro";
 export type DemoMode = "download" | "preview" | "code";

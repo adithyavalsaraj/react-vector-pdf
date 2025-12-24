@@ -135,7 +135,13 @@ export declare class PdfRenderer {
     private cursorX;
     private cursorY;
     private contentWidth;
-    private margin;
+    private reservedBottomHeight;
+    margin: {
+        top: number;
+        right: number;
+        bottom: number;
+        left: number;
+    };
     private defaultFont;
     private defaultColor;
     private defaultLineHeight;
@@ -144,8 +150,13 @@ export declare class PdfRenderer {
     private pendingTasks;
     private opQueue;
     private generation;
+    private recordingStack;
     private recurringItems;
     constructor(opts?: PDFOptions);
+    startRecording(): void;
+    stopRecording(): (() => void)[];
+    playback(ops: Array<() => void>): void;
+    private drawOp;
     get instance(): jsPDF;
     get width(): number;
     get height(): number;
@@ -161,6 +172,11 @@ export declare class PdfRenderer {
         size: number;
     };
     get baseLineHeight(): number;
+    setReservedHeight(h: number): void;
+    private indentStack;
+    private currentIndent;
+    pushIndent(left: number, right: number): void;
+    popIndent(): void;
     resetFlowCursor(): void;
     reset(): void;
     setHeaderFooter(header?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void, footer?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void): void;
@@ -215,6 +231,16 @@ export declare class PdfRenderer {
     }): void;
     save(filename: string): void;
     getBlobUrl(): URL;
+    /**
+     * Injects a filled rectangle at the beginning of the page stream.
+     * This ensures the background is drawn BEHIND all other content on the page.
+     */
+    injectFill(pageNum: number, rect: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }, color: string): void;
 }
 
 export declare const PdfTable: default_2.FC<PdfTableProps>;

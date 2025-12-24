@@ -20,7 +20,7 @@ export const PdfText: React.FC<PdfTextProps> = ({
 }) => {
   const pdf = usePdf();
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     pdf.queueOperation(() => {
       const startPos = pdf.getCursor();
       let h = 0;

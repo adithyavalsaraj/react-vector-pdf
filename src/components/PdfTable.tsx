@@ -51,7 +51,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
 }) => {
   const pdf = usePdf();
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     pdf.queueOperation(() => {
       // 1. Calculate available width
       const totalWidth =
@@ -228,6 +228,16 @@ export const PdfTable: React.FC<PdfTableProps> = ({
         const rowHeights: number[] = new Array(data.length).fill(0);
 
         // Pass 1: Measure Heights
+        // We'll calculate min height needed for each row based on single-row cells
+        // And store spanned cells to check later
+        const spannedCells: {
+          ri: number;
+          rSpan: number;
+          content: string;
+          width: number;
+          style: TextStyle & BoxStyle;
+        }[] = [];
+
         for (let ri = 0; ri < data.length; ri++) {
           const row = data[ri];
           let maxH = 0;
@@ -252,15 +262,22 @@ export const PdfTable: React.FC<PdfTableProps> = ({
               content = String(val ?? "");
             }
 
-            // If spans multiple rows, don't use it to calculate THIS row's height
-            if (rSpan > 1) {
-              ci += cSpan - 1;
-              continue;
-            }
-
             let effW = colWidths[ci];
             for (let k = 1; k < cSpan; k++) {
               if (ci + k < colWidths.length) effW += colWidths[ci + k];
+            }
+
+            // If spans multiple rows, store for later check
+            if (rSpan > 1) {
+              spannedCells.push({
+                ri,
+                rSpan,
+                content,
+                width: effW,
+                style: style ?? {},
+              });
+              ci += cSpan - 1;
+              continue;
             }
 
             const h = measureCell(content, effW, style ?? {});
@@ -271,6 +288,29 @@ export const PdfTable: React.FC<PdfTableProps> = ({
           if (maxH < 8) maxH = 8;
           rowHeights[ri] = maxH;
         }
+
+        // Pass 1.5: Adjust heights for spanned cells
+        spannedCells.forEach((cell) => {
+          const { ri, rSpan, content, width, style } = cell;
+          const contentH = measureCell(content, width, style);
+
+          // Calculate current available height in the spanned rows
+          let currentSpanH = 0;
+          for (let k = 0; k < rSpan; k++) {
+            if (ri + k < rowHeights.length) {
+              currentSpanH += rowHeights[ri + k];
+            }
+          }
+
+          if (contentH > currentSpanH) {
+            // Distribute difference to the last row of the span (simplest approach)
+            // or maybe verify if it fits better elsewhere.
+            // Adding to last row is safe because it expands the block downwards.
+            const diff = contentH - currentSpanH;
+            const lastRowIdx = Math.min(ri + rSpan - 1, rowHeights.length - 1);
+            rowHeights[lastRowIdx] += diff;
+          }
+        });
 
         // Pass 2: Render
         let currentY = y;
@@ -359,7 +399,8 @@ export const PdfTable: React.FC<PdfTableProps> = ({
               if (alternateRowStyle) {
                 cStyle = alternateRowStyle;
               } else if (striped) {
-                cStyle = { ...rowStyle, fillColor: "#F9FAFB" }; // Light gray for striped
+                // Use a darker gray for visibility #E5E7EB
+                cStyle = { ...rowStyle, fillColor: "#E5E7EB" };
               }
             }
             let content = "";
