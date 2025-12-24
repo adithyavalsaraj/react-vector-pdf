@@ -572,7 +572,7 @@ export const DemoApp: React.FC = () => {
               ) : (
                 <div className="h-full">
                   <CodeBlock
-                    style={{ height: "calc(100vh - 224px)" }}
+                    className="code-viewer-container"
                     code={generateReactCode(items, {
                       pnEnabled,
                       pnPos,
@@ -623,14 +623,7 @@ export const DemoApp: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto w-full p-4 min-h-0">
-          <div
-            style={{
-              maxWidth: "800px",
-              margin: "0 auto",
-              height: "calc(100vh - 174px)",
-              overflow: "auto",
-            }}
-          >
+          <div className="docs-viewer-container">
             <DocsContent />
           </div>
         </div>

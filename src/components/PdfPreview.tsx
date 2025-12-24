@@ -12,6 +12,8 @@ export interface PdfPreviewProps
   iframeStyle?: React.CSSProperties;
 }
 
+import "./styles.css";
+
 export const PdfPreview: React.FC<PdfPreviewProps> = ({
   width = "inherit",
   height = "inherit",
@@ -29,9 +31,12 @@ export const PdfPreview: React.FC<PdfPreviewProps> = ({
   };
 
   return (
-    <div className={className} style={{ width, height, ...style }}>
+    <div
+      className={`pdf-preview-container ${className || ""}`}
+      style={{ width, height, ...style }}
+    >
       {/* Invisible Document which generates the blob */}
-      <div style={{ display: "none" }}>
+      <div className="pdf-preview-hidden">
         <PdfDocument {...documentProps} onReady={handleReady} autoSave={false}>
           {documentProps.children}
         </PdfDocument>
@@ -42,24 +47,12 @@ export const PdfPreview: React.FC<PdfPreviewProps> = ({
           src={blobUrl}
           width="100%"
           height="100%"
-          className={iframeClassName}
-          style={{ border: "none", ...iframeStyle }}
+          className={`pdf-preview-iframe ${iframeClassName || ""}`}
+          style={iframeStyle}
           title="PDF Preview"
         />
       ) : (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#f3f4f6",
-            color: "#6b7280",
-          }}
-        >
-          Generating Preview...
-        </div>
+        <div className="pdf-preview-placeholder">Generating Preview...</div>
       )}
     </div>
   );

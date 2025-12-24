@@ -67,8 +67,7 @@ export const PageNumberSettings: React.FC<PageNumberSettingsProps> = (
             </select>
             {props.scope === "custom" && (
               <input
-                className="input-sm"
-                style={{ width: "120px" }}
+                className="input-sm w-sm-input"
                 placeholder="e.g., 2,3,5"
                 value={props.customPages}
                 onChange={(e) => props.setCustomPages(e.target.value)}

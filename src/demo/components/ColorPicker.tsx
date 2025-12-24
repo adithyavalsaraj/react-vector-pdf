@@ -61,17 +61,17 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       <label>{label}</label>
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="hstack gap-2 border p-2 rounded bg-white cursor-pointer items-center min-h-9"
+        className="hstack gap-2 border p-2 rounded bg-white cursor-pointer items-center max-h-9"
       >
         <div
-          className="rounded border"
-          style={{
-            width: "20px",
-            height: "20px",
-            background:
-              value ||
-              "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACpJREFUGFdjZEACJ98y/GfABYhIsgAJAAnuO/yX8X8DJACOYfzfAAkgIwAAOfEHBSp+8N4AAAAASUVORK5CYII=)",
-          }}
+          className="rounded border color-swatch"
+          style={
+            value
+              ? {
+                  background: value,
+                }
+              : undefined
+          }
         />
         <span className={`text-xs ${value ? "text-main" : "text-muted"}`}>
           {value ? `${hex} (${Math.round(alpha * 100)}%)` : "None"}

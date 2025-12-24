@@ -58,8 +58,7 @@ export const FooterSettings: React.FC<FooterSettingsProps> = (props) => {
             </select>
             {props.scope === "custom" && (
               <input
-                className="input-sm"
-                style={{ width: "120px" }}
+                className="input-sm w-sm-input"
                 value={props.customPages}
                 onChange={(e) => props.setCustomPages(e.target.value)}
                 placeholder="e.g. 2,5"
@@ -103,27 +102,32 @@ export const FooterSettings: React.FC<FooterSettingsProps> = (props) => {
             onChange={(val) => props.setColor(val || "#000000")}
           />
 
-          <div className="control col-span-3 hstack gap-4 items-end border-t pt-2 mt-2">
-            <div className="hstack gap-2 items-center">
+          <div className="control">
+            <label>&nbsp;</label>
+            <div className="hstack gap-2 items-center min-h-9">
               <input
-                className="w-5 h-5"
+                className="w-5 h-5 cursor-pointer"
                 type="checkbox"
                 id="footerBorder"
                 checked={props.border}
                 onChange={(e) => props.setBorder(e.target.checked)}
               />
-              <label htmlFor="footerBorder">Show Top Border</label>
+              <label
+                htmlFor="footerBorder"
+                className="text-sm cursor-pointer m-0 select-none"
+              >
+                Show Top Border
+              </label>
             </div>
-            {props.border && (
-              <div className="flex-1">
-                <ColorPicker
-                  label="Border Color"
-                  value={props.borderColor}
-                  onChange={(val) => props.setBorderColor(val || "#e5e7eb")}
-                />
-              </div>
-            )}
           </div>
+
+          {props.border && (
+            <ColorPicker
+              label="Border Color"
+              value={props.borderColor}
+              onChange={(val) => props.setBorderColor(val || "#e5e7eb")}
+            />
+          )}
         </div>
       )}
     </div>

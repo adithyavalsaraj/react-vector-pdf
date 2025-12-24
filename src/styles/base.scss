@@ -323,6 +323,9 @@ select {
 .min-h-9 {
   min-height: 36px !important;
 }
+.max-h-9 {
+  max-height: 36px !important;
+}
 .min-h-24 {
   min-height: 100px !important;
 }
@@ -614,3 +617,30 @@ ul.list-disc {
 .w-fit {
   width: fit-content;
 }
+
+// Refactored helper classes
+.w-sm-input {
+  width: 120px !important;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACpJREFUGFdjZEACJ98y/GfABYhIsgAJAAnuO/yX8X8DJACOYfzfAAkgIwAAOfEHBSp+8N4AAAAASUVORK5CYII=");
+}
+
+.code-viewer-container {
+  height: calc(100vh - 224px);
+}
+
+.docs-viewer-container {
+  max-width: 800px;
+  margin: 0 auto;
+  height: calc(100vh - 174px);
+  overflow: auto;
+}
+
+.col-span-full {
+  grid-column: 1 / -1 !important;
+}
+
