@@ -97,7 +97,42 @@ import { PdfPreview, PdfText } from "react-vector-pdf";
 
 ## Styling with CSS Classes
 
-You can use standard CSS classes (including generic CSS or utility frameworks like **Tailwind CSS**) to style PDF components using the `className` prop. The library extracts valid styles (colors, fonts, borders, padding, margin) from the class and applies them to the PDF vector output.
+You can use standard CSS classes (including generic CSS or utility frameworks like **Tailwind CSS**) to style PDF components using the `className` prop. The library uses a special `useClassStyles` hook that renders a hidden DOM element to compute CSS styles and converts them into PDF-compatible properties.
+
+### Supported CSS Properties
+
+| CSS Property       | PDF Mapping   | Notes                            |
+| ------------------ | ------------- | -------------------------------- |
+| `color`            | `color`       | Supports hex and RGBA            |
+| `background-color` | `fillColor`   | Supports hex and RGBA            |
+| `font-size`        | `fontSize`    | Converted from px to points (pt) |
+| `font-weight`      | `fontStyle`   | ≥700 maps to 'bold'              |
+| `font-style`       | `fontStyle`   | Supports italic/bold/bolditalic  |
+| `text-align`       | `align`       | left/center/right/justify        |
+| `line-height`      | `lineHeight`  | Converted to multiplier          |
+| `padding-*`        | `padding`     | Converted from px to mm          |
+| `margin-*`         | `margin`      | Converted from px to mm          |
+| `border-width`     | `borderWidth` | Uniform borders only, px to mm   |
+| `border-color`     | `borderColor` | Supports hex and RGBA            |
+| `border-radius`    | `radius`      | Converted from px to mm          |
+| `gap`              | `gap`         | PdfView only, px to mm           |
+| `width`            | `width`       | Explicit widths, px to mm        |
+| `height`           | `height`      | Explicit heights, px to mm       |
+
+### Unsupported Properties
+
+The following CSS properties are **not supported** and will trigger console warnings if used:
+
+- `box-shadow`, `text-shadow`
+- `z-index`
+- `float`
+- `overflow`
+- `transform`
+- Layout properties: `display: flex/grid`, `position: absolute/fixed`
+
+> **Note**: PDF layout uses standard flow or absolute positioning. Complex CSS layout features like flexbox and grid are not available.
+
+### Usage Examples
 
 ```tsx
 // Using Tailwind CSS classes
@@ -113,9 +148,22 @@ You can use standard CSS classes (including generic CSS or utility frameworks li
     Items inside this view are separated by a 1rem (approx 4mm) gap.
   </PdfText>
 </PdfView>
+
+// Mixing className with direct props (direct props take precedence)
+<PdfText className="text-blue-500" color="#FF0000">
+  This text will be red, not blue
+</PdfText>
 ```
 
-> **Note**: Properties like `display: flex` or `grid` are **not supported** as PDF layout is strictly standard flow or absolute positioning. However, `gap` **is supported** in `PdfView` to add spacing between flow items. Only box-model properties (padding/margin/border/gap) and typography/color styles are mapped.
+### How It Works
+
+The library:
+
+1. Creates a hidden `<div>` element with the provided `className`
+2. Uses `getComputedStyle()` to read the final computed CSS values
+3. Converts pixel values to PDF units (mm for dimensions, pt for fonts)
+4. Maps CSS properties to PDF renderer properties
+5. Validates and warns about unsupported properties
 
 ## Components
 
@@ -147,6 +195,8 @@ Renders a paragraph of text. Automatically wraps to the content width.
 - `align` ('left' | 'center' | 'right' | 'justify'): Text alignment.
 - `lineHeight` (number): Line height multiplier.
 - `spacingBelow` (number): Vertical space (mm) to add after the paragraph.
+- `className` (string): CSS class names for styling (supports Tailwind and other frameworks).
+- `style` (React.CSSProperties): Inline styles object.
 - `showInAllPages` (boolean): Make this text appear on multiple pages.
 - `scope` ('all' | 'first-only' | 'except-first' | number[]): Which pages to show on.
 
@@ -193,6 +243,8 @@ A robust table component designed for dynamic data.
 - `cellPadding`: Default padding for cells (number or object).
 - `striped` (boolean): Enable alternating row colors.
 - `repeatHeader` (boolean): Repeat header on each page (default: true).
+- `className` (string): CSS class names for styling.
+- `style` (React.CSSProperties): Inline styles object.
 
 **Complex Cell Example:**
 
@@ -245,6 +297,8 @@ Embed images (JPEG/PNG).
 - `align` ('left' | 'center' | 'right'): Horizontal alignment (flow mode only).
 - `layout` ('fixed' | 'flow'): Layout mode (default: 'fixed').
 - `sizing` ('fit' | 'fill' | 'auto'): How to size the image (default: 'fit').
+- `className` (string): CSS class names for styling.
+- `style` (React.CSSProperties): Inline styles object.
 - `showInAllPages` (boolean): Make this image appear on multiple pages.
 - `scope` ('all' | 'first-only' | 'except-first' | number[]): Which pages to show on.
 
@@ -274,7 +328,8 @@ A container component for grouping content, adding borders, backgrounds, or marg
 
 **Props:**
 
-- `style`: Object with `margin`, `padding` (granular: `marginTop`, `paddingLeft` etc.), `borderWidth`, `borderColor`, `fillColor`, `radius`.
+- `style`: Object with `margin`, `padding` (granular: `marginTop`, `paddingLeft` etc.), `borderWidth`, `borderColor`, `fillColor`, `radius`, `gap`.
+- `className` (string): CSS class names for styling (supports gap, padding, margin, borders, backgrounds).
 - `x`, `y`, `w`, `h`: Optional props for **absolute positioning**. If provided, the view will be placed at exactly these coordinates.
 - `children`: Nested components to render inside the view.
 - `showInAllPages` (boolean): Make this view appear on multiple pages.
@@ -306,6 +361,7 @@ Renders bulleted or numbered lists.
 - `indent`: Number (mm) for indentation. Default 5.
 - `markerWidth`: Number (mm) for the marker area. Default 5.
 - `spacing`: Number (mm) for space between items. Default 2.
+- `className` (string): CSS class names for styling list items.
 - `style`: TextStyle object for the list items.
 
 ```tsx
