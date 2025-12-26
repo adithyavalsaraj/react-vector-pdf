@@ -16,23 +16,8 @@ export interface PdfImageProps {
   align?: "left" | "center" | "right";
   showInAllPages?: boolean;
   scope?: "all" | "first-only" | "except-first" | number[];
-}
-
-export interface PdfImageProps {
-  src: string;
-  x?: number;
-  y?: number;
-  w?: number;
-  h?: number;
-  mime?: "PNG" | "JPEG";
-  flow?: boolean;
-  layout?: "fixed" | "flow";
-  sizing?: "fit" | "fill" | "auto";
-  align?: "left" | "center" | "right";
-  showInAllPages?: boolean;
-  scope?: "all" | "first-only" | "except-first" | number[];
-  className?: string;
-  style?: React.CSSProperties;
+  className?: string; // Tailwind or CSS class
+  style?: React.CSSProperties; // React styles
 }
 
 export const PdfImage: React.FC<PdfImageProps> = ({
@@ -92,6 +77,8 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     if (sizing === "fill") {
       renderW = pdf.contentAreaWidth;
     } else if (sizing === "fit" && !effectiveW) {
+      // "fit" logic falls back to natural size scaling in renderer
+      // unless we explicitly want to constrain it here.
     }
 
     // Pass undefined coordinates to renderer if they are missing
@@ -113,6 +100,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
           h: effectiveH,
           mime,
           align,
+          radius: computed.radius,
         });
         return res;
       };
@@ -141,6 +129,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
                 h: effectiveH,
                 mime,
                 align,
+                radius: computed.radius,
               });
             });
           },

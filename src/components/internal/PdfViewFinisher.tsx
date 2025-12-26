@@ -33,7 +33,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
   const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
 
   React.useLayoutEffect(() => {
-    // Only queue once per renderer instance/generation to prevent double-drawing
+    // Ensure operation is queued only once per generation.
     if (
       queuedRef.current?.pdf === pdf &&
       queuedRef.current?.gen === pdf.generation
@@ -49,7 +49,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       const computed = computeStyle();
       let style = { ...computed, ...styleProp } as ViewStyle;
 
-      // Smart Defaults: matching logic in Init
+      // Apply smart defaults consistent with initialization logic.
       const hasBg = !!style.fillColor;
       const hasBorder = !!style.borderColor || (style.borderWidth ?? 0) > 0;
       const styleHasPadding =
@@ -104,13 +104,9 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       }
       const boxWidthWithPadding = boxW + pad.left + pad.right;
 
-      // STRATEGY: Single Pass (No Record/Playback)
-      // 1. Calculate Page Geometry based on current cursor (after children drawn)
-      // 2. Inject Background Fill (BEHIND CONTENT) into Page Stream.
-      // 3. Draw Borders (FOREGROUND) using standard draw commands.
+      // Strategy: Calculate geometry and draw background/borders.
 
       // Pass 1: Layout - Already done by children
-      // pdf.playback(ops); // DISABLED
 
       const endPage = pdf.getPageCount();
       const after = pdf.getCursor();
@@ -159,11 +155,12 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
         }
 
         // Safety: Ensure we don't draw negative or near-zero height boxes
-        // This prevents artifacts (extra empty borders) when layout calculations result in tiny fragments
         if (drawH < 0.5 || isNaN(drawH)) continue;
 
-        // Draw Borders (Foreground) - Draw first to ensure they appear even if background injection fails
-        // Only draw border if borderWidth is explicitly set and > 0
+        const r = style.radius ?? 0;
+        const isSinglePageItem = startPage === endPage;
+
+        // Draw Borders (Foreground)
         if (style.borderWidth && style.borderWidth > 0) {
           const inst = pdf.instance;
           const width = style.borderWidth;
@@ -172,37 +169,150 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
           const rgb = hexToRgb(color);
           if (rgb) inst.setDrawColor(rgb[0], rgb[1], rgb[2]);
 
-          // Border box X position: use start.x consistently on ALL pages
-          // Safety: Clamp to margin.left to prevent any weird negative shifts, though start.x should be safe
           const gx = Math.max(start.x, pdf.margin.left);
           const gy = drawY;
           const gw = boxWidthWithPadding;
           const gh = drawH;
 
-          inst.line(gx, gy, gx, gy + gh);
-          inst.line(gx + gw, gy, gx + gw, gy + gh);
+          if (r > 0 && isSinglePageItem) {
+            // Single page: all corners rounded
+            inst.roundedRect(gx, gy, gw, gh, r, r);
+          } else if (r > 0 && !isSinglePageItem) {
+            // Multi-page: smart caps
+            // We need to manually draw lines and arcs because standard rects don't support partial radius
 
-          if (p === startPage) inst.line(gx, gy, gx + gw, gy);
-          if (p === endPage) inst.line(gx, gy + gh, gx + gw, gy + gh);
+            // Helper for partial rounded rect
+            // 0=TopLeft, 1=TopRight, 2=BottomRight, 3=BottomLeft
+            const drawSmartRect = (corners: boolean[]) => {
+              // Construct path using lines and arcs for proper scaling
+
+              // Let's use lines and arcs.
+              // K = 0.551784
+              const k = 0.551784;
+              const kr = r * k;
+
+              let ops: any[] = [];
+
+              // Start Top-Left
+              if (corners[0]) {
+                // Move to start of arc
+                inst.moveTo(gx, gy + r);
+                inst.curveTo(gx, gy + r - kr, gx + r - kr, gy, gx + r, gy);
+              } else {
+                inst.moveTo(gx, gy);
+              }
+
+              // Top Edge
+              inst.lineTo(gx + gw - (corners[1] ? r : 0), gy);
+
+              // Top-Right
+              if (corners[1]) {
+                inst.curveTo(
+                  gx + gw - r + kr,
+                  gy,
+                  gx + gw,
+                  gy + r - kr,
+                  gx + gw,
+                  gy + r
+                );
+              } else {
+                inst.lineTo(gx + gw, gy);
+              }
+
+              // Right Edge
+              inst.lineTo(gx + gw, gy + gh - (corners[2] ? r : 0));
+
+              // Bottom-Right
+              if (corners[2]) {
+                inst.curveTo(
+                  gx + gw,
+                  gy + gh - r + kr,
+                  gx + gw - r + kr,
+                  gy + gh,
+                  gx + gw - r,
+                  gy + gh
+                );
+              } else {
+                inst.lineTo(gx + gw, gy + gh);
+              }
+
+              // Bottom Edge
+              inst.lineTo(gx + (corners[3] ? r : 0), gy + gh);
+
+              // Bottom-Left
+              if (corners[3]) {
+                inst.curveTo(
+                  gx + r - kr,
+                  gy + gh,
+                  gx,
+                  gy + gh - r + kr,
+                  gx,
+                  gy + gh - r
+                );
+              } else {
+                inst.lineTo(gx, gy + gh);
+              }
+
+              // Left Edge (close)
+              if (corners[0]) {
+                inst.lineTo(gx, gy + r);
+              } else {
+                inst.lineTo(gx, gy);
+              }
+
+              inst.stroke();
+            };
+
+            if (p === startPage) {
+              // Top corners rounded, bottom square
+              drawSmartRect([true, true, false, false]);
+            } else if (p === endPage) {
+              // Top square, bottom rounded
+              drawSmartRect([false, false, true, true]);
+            } else {
+              // All square
+              drawSmartRect([false, false, false, false]);
+            }
+          } else {
+            // Draw standard rectangular borders.
+            inst.line(gx, gy, gx, gy + gh);
+            inst.line(gx + gw, gy, gx + gw, gy + gh);
+
+            if (p === startPage) inst.line(gx, gy, gx + gw, gy);
+            if (p === endPage) inst.line(gx, gy + gh, gx + gw, gy + gh);
+          }
         }
 
         // Draw Background (Inject Fill Behind)
         if (style.fillColor) {
-          // Background box X position: use start.x consistently on ALL pages
-          // Safety: Clamp to margin.left
           const rectX = Math.max(start.x, pdf.margin.left);
           const rectY = drawY;
           const rectW = boxWidthWithPadding;
           const rectH = drawH;
 
-          // Inject Fill
-          // We wrap this in try-catch to prevent crashes from aborting the rest of the render (though borders are now safe)
           try {
             if ((pdf as any).injectFill) {
+              let radiusToApply:
+                | number
+                | { tl?: number; tr?: number; br?: number; bl?: number } = 0;
+
+              if (r > 0 && isSinglePageItem) {
+                radiusToApply = r;
+              } else if (r > 0) {
+                if (p === startPage) {
+                  radiusToApply = { tl: r, tr: r, br: 0, bl: 0 };
+                } else if (p === endPage) {
+                  radiusToApply = { tl: 0, tr: 0, br: r, bl: r };
+                } else {
+                  radiusToApply = 0;
+                }
+              }
+
               (pdf as any).injectFill(
                 p,
                 { x: rectX, y: rectY, w: rectW, h: rectH },
-                style.fillColor
+                style.fillColor,
+                radiusToApply
               );
             }
           } catch (e) {
@@ -229,14 +339,32 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       }
 
       if (viewState.isAbsolute) {
-        // Do not move cursor
+        // Absolute positioning does not affect the cursor stack.
       } else {
-        const finalY = after.y + pad.bottom + margin.bottom;
-        pdf.setCursor(start.x, finalY);
-      }
+        // We need to restore cursor.
+        // popVerticalPadding will add pad.bottom to cursorY.
+        // We also need to add margin.bottom.
 
-      // Finally clear reservation for this view
-      pdf.setReservedHeight(0);
+        // However, 'after.y' is where content ended.
+        // If we pop logic, we assume cursor is at 'after.y'.
+        // Let's set cursor to 'after.y' first.
+        pdf.setCursor(start.x, after.y);
+
+        // @ts-ignore
+        if (pdf.popVerticalPadding) {
+          // @ts-ignore
+          pdf.popVerticalPadding(); // Adds pad.bottom
+        } else {
+          // Fallback
+          pdf.moveCursor(0, pad.bottom);
+          pdf.setReservedHeight(0);
+        }
+
+        // Add margin bottom
+        if (margin.bottom > 0) {
+          pdf.moveCursor(0, margin.bottom);
+        }
+      }
 
       // Restore Indentation
       if ((viewState as any).hasIndent) {

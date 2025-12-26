@@ -37,7 +37,7 @@ export interface PdfTableProps {
   striped?: boolean;
   className?: string;
   style?: React.CSSProperties;
-  stripeColor?: string; // NEW: Custom stripe color
+  stripeColor?: string; // Custom stripe color for alternate rows.
 }
 
 export const PdfTable: React.FC<PdfTableProps> = ({
@@ -53,7 +53,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
   headerHeight,
   repeatHeader = true,
   striped = false,
-  stripeColor = "#E5E7EB", // Default stripe color
+  stripeColor = "#E5E7EB",
   className,
   style,
 }) => {
@@ -119,7 +119,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
           : (parseFloat(width as string) / 100) * pdf.contentAreaWidth;
 
       // 2. Resolve column widths
-      // Simple algorithm: Fixed widths take space, rest distributed among "auto" or "%"
+      // Algorithm: Prioritize fixed widths, distribute remaining space.
       // simplifying: support fixed (number) and weighted (default 1)
 
       const colWidths: number[] = columns.map((col) => {
@@ -157,6 +157,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
             borderColor: style.borderColor ?? borderColor,
             borderWidth: style.borderWidth ?? borderWidth,
             fillColor: style.fillColor,
+            radius: style.radius,
           });
         }
 
@@ -172,7 +173,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
         const availW = w - pad.left - pad.right;
 
         // Manually split text to ensure wrapping respects the cell width
-        // @ts-ignore
+        // @ts-ignore: jsPDF types mismatch for splitTextToSize
         const lines = pdf.instance.splitTextToSize(text, availW, style);
 
         const lineHeightMm =
