@@ -18,6 +18,7 @@ export declare interface BoxStyle {
     paddingRight?: number;
     paddingBottom?: number;
     paddingLeft?: number;
+    gap?: number;
 }
 
 export declare interface CenterLabelOptions {
@@ -84,6 +85,8 @@ declare interface PdfImageProps {
     align?: "left" | "center" | "right";
     showInAllPages?: boolean;
     scope?: "all" | "first-only" | "except-first" | number[];
+    className?: string;
+    style?: default_2.CSSProperties;
 }
 
 export declare const PdfList: default_2.FC<PdfListProps>;
@@ -95,6 +98,7 @@ declare interface PdfListProps {
     indent?: number;
     markerWidth?: number;
     spacing?: number;
+    className?: string;
 }
 
 export declare interface PDFOptions {
@@ -135,7 +139,13 @@ export declare class PdfRenderer {
     private cursorX;
     private cursorY;
     private contentWidth;
-    private margin;
+    private reservedBottomHeight;
+    margin: {
+        top: number;
+        right: number;
+        bottom: number;
+        left: number;
+    };
     private defaultFont;
     private defaultColor;
     private defaultLineHeight;
@@ -143,9 +153,14 @@ export declare class PdfRenderer {
     private footerDrawer?;
     private pendingTasks;
     private opQueue;
-    private generation;
+    generation: number;
+    private recordingStack;
     private recurringItems;
     constructor(opts?: PDFOptions);
+    startRecording(): void;
+    stopRecording(): (() => void)[];
+    playback(ops: Array<() => void>): void;
+    private drawOp;
     get instance(): jsPDF;
     get width(): number;
     get height(): number;
@@ -153,6 +168,15 @@ export declare class PdfRenderer {
     get contentRight(): number;
     get contentTop(): number;
     get contentBottom(): number;
+    private indentStack;
+    private currentIndent;
+    pushIndent(left: number, right: number): void;
+    popIndent(): void;
+    /**
+     * Returns the top Y position for content on a given page, accounting for recurring items.
+     * This is useful for drawing background boxes that shouldn't overlap headers.
+     */
+    getSafeContentTop(pageNum: number): number;
     get contentHeight(): number;
     get contentAreaWidth(): number;
     get baseFont(): {
@@ -161,6 +185,14 @@ export declare class PdfRenderer {
         size: number;
     };
     get baseLineHeight(): number;
+    private verticalPaddingStack;
+    pushVerticalPadding(top: number, bottom: number): void;
+    popVerticalPadding(): void;
+    get currentVerticalPadding(): {
+        top: number;
+        bottom: number;
+    };
+    setReservedHeight(h: number): void;
     resetFlowCursor(): void;
     reset(): void;
     setHeaderFooter(header?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void, footer?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void): void;
@@ -178,6 +210,7 @@ export declare class PdfRenderer {
         h?: number;
         mime?: "PNG" | "JPEG";
         align?: "left" | "center" | "right";
+        radius?: number;
     }): Promise<{
         width: number;
         height: number;
@@ -215,6 +248,21 @@ export declare class PdfRenderer {
     }): void;
     save(filename: string): void;
     getBlobUrl(): URL;
+    /**
+     * Injects a filled rectangle at the beginning of the page stream.
+     * This ensures the background is drawn BEHIND all other content on the page.
+     */
+    injectFill(pageNum: number, rect: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }, color: string, radius?: number | {
+        tl?: number;
+        tr?: number;
+        br?: number;
+        bl?: number;
+    }): void;
 }
 
 export declare const PdfTable: default_2.FC<PdfTableProps>;
@@ -237,6 +285,9 @@ declare interface PdfTableProps {
     headerHeight?: number;
     repeatHeader?: boolean;
     striped?: boolean;
+    className?: string;
+    style?: default_2.CSSProperties;
+    stripeColor?: string;
 }
 
 export declare const PdfText: default_2.FC<PdfTextProps>;
@@ -247,18 +298,23 @@ declare interface PdfTextProps extends TextStyle {
     y?: number;
     maxWidth?: number;
     spacingBelow?: number;
+    className?: string;
+    style?: default_2.CSSProperties;
 }
 
 export declare const PdfView: default_2.FC<PdfViewProps>;
 
 declare interface PdfViewProps {
-    style?: ViewStyle;
+    style?: ViewStyle | default_2.CSSProperties;
+    className?: string;
     children?: default_2.ReactNode;
     debug?: boolean;
     x?: number;
     y?: number;
     w?: number;
     h?: number;
+    showInAllPages?: boolean;
+    scope?: "all" | "first-only" | "except-first" | number[];
 }
 
 declare interface TableColumn {
