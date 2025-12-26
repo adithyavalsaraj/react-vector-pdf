@@ -9,6 +9,14 @@ import {
 } from "./utils/pdfHelpers";
 
 export interface DemoPdfProps {
+  // New Global Settings
+  metadata: any;
+  layout: any;
+  margins: any;
+  typography: any;
+  baseColor: string;
+  autoSave?: boolean;
+
   pnEnabled: boolean;
   pnPos: "header" | "footer";
   pnAlign: "left" | "center" | "right";
@@ -57,6 +65,12 @@ export interface DemoPdfProps {
 }
 
 export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
+  metadata,
+  layout,
+  margins,
+  typography,
+  baseColor,
+  autoSave = false,
   pnEnabled,
   pnPos,
   pnAlign,
@@ -126,11 +140,14 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
 
   return (
     <PdfDocument
+      metadata={metadata}
       options={{
-        margin: { top: 18, right: 15, bottom: 15, left: 15 },
-        font: { size: 12 },
-        color: "#111827",
-        lineHeight: 1.35,
+        format: layout.format === "custom" ? [210, 297] : layout.format,
+        orientation: layout.orientation,
+        margin: margins,
+        font: { size: typography.fontSize, name: typography.fontName },
+        color: baseColor,
+        lineHeight: typography.lineHeight,
       }}
       header={headerRenderer}
       footer={footerRenderer}
@@ -163,7 +180,7 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
       }}
       onReady={onReady}
       filename={filename}
-      autoSave={false}
+      autoSave={autoSave}
     >
       <DemoPdfContent
         items={items}

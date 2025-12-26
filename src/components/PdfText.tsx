@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useId } from "react";
 import type { TextStyle } from "../core/types";
 import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
+import { usePdfItemContext } from "./internal/PdfItemContext";
 
 export interface PdfTextProps extends TextStyle {
   children: string;
@@ -24,19 +25,19 @@ export const PdfText: React.FC<PdfTextProps> = ({
   ...textStyle
 }) => {
   const pdf = usePdf();
+  const context = usePdfItemContext();
+  const id = useId();
   const { ref, computeStyle } = useClassStyles(className, styleProp);
 
   React.useLayoutEffect(() => {
-    // Extract styles synchronously after render
     const resolved = computeStyle();
 
-    // Merge Strategy: Explicit Props > CSS Class > Defaults
     const finalStyle = {
       ...resolved,
       ...textStyle,
     } as TextStyle;
 
-    pdf.queueOperation(() => {
+    const task = async () => {
       const startPos = pdf.getCursor();
       let h = 0;
       const draw = () => {
@@ -46,7 +47,10 @@ export const PdfText: React.FC<PdfTextProps> = ({
           pdf.setCursor(startPos.x, startPos.y);
           h = pdf.paragraph(children, finalStyle, maxWidth);
           const cur = pdf.getCursor();
-          pdf.setCursor(cur.x, cur.y + spacingBelow);
+
+          if (spacingBelow > 0) {
+            pdf.setCursor(cur.x, cur.y + spacingBelow);
+          }
         }
       };
 
@@ -60,10 +64,18 @@ export const PdfText: React.FC<PdfTextProps> = ({
           height: h + spacingBelow,
         });
       }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    };
+
+    if (context) {
+      context.registerOperation(id, task);
+      return () => context.unregisterOperation(id);
+    } else {
+      pdf.queueOperation(task);
+    }
   }, [
     pdf,
+    context, // Add context dependency
+    id,
     children,
     x,
     y,

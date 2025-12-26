@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useId } from "react";
 import { BoxStyle, TextStyle } from "../core/types";
 import { useClassStyles } from "../core/useClassStyles";
 import { resolvePadding } from "../core/utils";
 import { usePdf } from "./PdfProvider";
+import { usePdfItemContext } from "./internal/PdfItemContext";
 
 export interface TableColumn {
   header?: string;
@@ -36,6 +37,7 @@ export interface PdfTableProps {
   striped?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  stripeColor?: string; // NEW: Custom stripe color
 }
 
 export const PdfTable: React.FC<PdfTableProps> = ({
@@ -51,10 +53,13 @@ export const PdfTable: React.FC<PdfTableProps> = ({
   headerHeight,
   repeatHeader = true,
   striped = false,
+  stripeColor = "#E5E7EB", // Default stripe color
   className,
   style,
 }) => {
   const pdf = usePdf();
+  const context = usePdfItemContext();
+  const id = useId();
   const { ref, computeStyle } = useClassStyles(className, style);
 
   React.useLayoutEffect(() => {
@@ -66,7 +71,11 @@ export const PdfTable: React.FC<PdfTableProps> = ({
 
     const borderColor = computed.borderColor ?? propBorderColor;
     const borderWidth = computed.borderWidth ?? propBorderWidth;
-    const cellPadding = computed.padding ?? propCellPadding;
+
+    // Only use computed padding if className or style is explicitly provided,
+    // otherwise fallback to prop to avoid browser default (0px) overriding it.
+    const useComputedPadding = (!!className || !!style) && computed.padding;
+    const cellPadding = useComputedPadding ? computed.padding : propCellPadding;
 
     // Text Styles merging
     const computedTextStyle: TextStyle & BoxStyle = {
@@ -84,16 +93,16 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       mergedHeaderStyle.fontStyle = headerStyle?.fontStyle ?? "bold";
     }
 
-    // Margin handling
-    const mt =
-      typeof computed.margin === "number"
-        ? computed.margin
-        : computed.margin?.top;
-    if (mt) {
-      pdf.moveCursor(0, mt);
-    }
+    const task = async () => {
+      // Margin handling
+      const mt =
+        typeof computed.margin === "number"
+          ? computed.margin
+          : computed.margin?.top;
+      if (mt) {
+        pdf.moveCursor(0, mt);
+      }
 
-    pdf.queueOperation(() => {
       // 1. Calculate available width
       const totalWidth =
         typeof width === "number"
@@ -154,6 +163,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
         const availW = w - pad.left - pad.right;
 
         // Manually split text to ensure wrapping respects the cell width
+        // @ts-ignore
         const lines = pdf.instance.splitTextToSize(text, availW, style);
 
         const lineHeightMm =
@@ -429,8 +439,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
               if (alternateRowStyle) {
                 cStyle = alternateRowStyle;
               } else if (striped) {
-                // Use a darker gray for visibility #E5E7EB
-                cStyle = { ...mergedRowStyle, fillColor: "#E5E7EB" };
+                cStyle = { ...mergedRowStyle, fillColor: stripeColor };
               }
             }
             let content = "";
@@ -496,7 +505,14 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       if (mb) {
         pdf.moveCursor(0, mb);
       }
-    });
+    };
+
+    if (context) {
+      context.registerOperation(id, task);
+      return () => context.unregisterOperation(id);
+    } else {
+      pdf.queueOperation(task);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf, data, columns, propWidth, className]);
 

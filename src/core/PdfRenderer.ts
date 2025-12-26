@@ -569,7 +569,12 @@ export class PdfRenderer {
       }
 
       // Draw text
-      const textY = this.cursorY + fontSize * 0.3528;
+      const fontSizeMm = fontSize * 0.3528;
+      const halfLeading = (lineHeightMm - fontSizeMm) / 2;
+
+      // Center text vertically in the line box:
+      // cursorY (top) + half-leading (space) + fontSizeMm (baseline offset)
+      const textY = this.cursorY + fontSizeMm + halfLeading;
 
       let textX = this.cursorX;
       if (align === "center") {
@@ -588,7 +593,7 @@ export class PdfRenderer {
     });
 
     // Add small spacing after block
-    this.cursorY += 1;
+    // this.cursorY += 1; // Removed as per user request to avoid extra space
     this.applyBaseFont();
     return totalHeight;
   }
@@ -660,10 +665,17 @@ export class PdfRenderer {
       this.pdf.setDocumentProperties({ author: metadata.author });
     if (metadata.subject)
       this.pdf.setDocumentProperties({ subject: metadata.subject });
-    if (metadata.keywords)
-      this.pdf.setDocumentProperties({
-        keywords: metadata.keywords.join(", "),
-      });
+    if (metadata.keywords) {
+      if (Array.isArray(metadata.keywords)) {
+        this.pdf.setDocumentProperties({
+          keywords: metadata.keywords.join(", "),
+        });
+      } else {
+        this.pdf.setDocumentProperties({
+          keywords: String(metadata.keywords),
+        });
+      }
+    }
   }
 
   save(filename: string) {
@@ -683,11 +695,19 @@ export class PdfRenderer {
   injectFill(
     pageNum: number,
     rect: { x: number; y: number; w: number; h: number },
-    color: string
+    color: string,
+    radius?: number
   ) {
     // @ts-ignore
     const pages = this.pdf.internal.pages;
-    const page = pages[pageNum];
+
+    let page = pages[pageNum];
+
+    // Fallback if page not found (e.g. 0-based indexing or other mismatch)
+    if (!page && pages[pageNum - 1]) {
+      page = pages[pageNum - 1];
+    }
+
     if (!page) return;
 
     // @ts-ignore
@@ -718,9 +738,111 @@ export class PdfRenderer {
     );
 
     // Draw Rectangle (re) and Fill (f)
-    ops.push(
-      `${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`
-    );
+    if (radius && radius > 0) {
+      // approximate rounded rect with lines/curves if we want to be raw,
+      // OR rely on 're' not being enough?
+      // raw streams don't have 'roundedRect' primitive easily in older specs,
+      // but jsPDF uses curves (c/v/y).
+      // Since we are injecting raw PDF stream ops, we must output PDF Drawing Commands.
+      // A simple 're' (x y w h re) is rectangle.
+      // Rounded needs moves (m) and curves (c).
+      // For simplicity/reliability/safety, if we can't easily emulate curves in raw stream
+      // generally developers avoid raw injection for complex shapes.
+      // HOWEVER, we can just assume 're' is square.
+      // If the user REALLY wants fixed background for rounded component behind content...
+      // We can try to manually construct the path.
+
+      // Actually, let's use a simpler hack:
+      // If we want rounded, we might have to accept that 'injectFill' is primitive.
+      // But wait, allow me to try generating the ops via a dummy context or just standard curve approximation.
+      // Or... standard solution: Just draw a rectangle.
+      // User complained "appearing out of border".
+
+      // Let's implement basic corner clipping if possible.
+      // It's quite complex to implement raw bezier curves here without a library.
+      // BUT, we can just use the 're' operator (rectangle).
+      // If I can't easily do rounded, I will just do rect.
+      // Oh, wait, I can just use the same logic as 'box' but prepend?
+      // No, 'box' calls `this.pdf.roundedRect`. `roundedRect` writes to the current page stream.
+      // `injectFill` writes to the START of the stream.
+
+      // Alternative: Don't use `injectFill`. Use `pdf.roundedRect` normally, but
+      // ensure it is drawn BEFORE children?
+      // In `PdfView`, we draw children, THEN we draw border.
+      // If we draw background *after* processing children (to know height),
+      // it overlays the children text if the background is opaque?
+      // No, standard PDF painting model: 'f' fills. 'S' strokes.
+      // Objects drawn later cover earlier ones.
+      // If we draw BG later, it covers text.
+      // That's why `injectFill` exists: to put it at the start.
+
+      // To support rounded rect in `injectFill`, I need the raw PDF operators for a rounded rect.
+      // I will use a simple implementation of "m ... l ... c ..."
+      // For strictness, let's keep it simple.
+      // Corner radius r.
+      // x, y. w, h.
+      // K = 0.551784 (kappa for bezier circle approx)
+
+      const r = radius * k; // Scale radius
+      const K = 0.551784;
+      const kr = r * K;
+
+      // PDF coords: y is up.
+      // Top-Left in our system is x, y(up).
+      // Our 'y' var above is actually the PDF bottom-left y.
+      // Wait, the calc `y = (pageHeight - (rect.y + rect.h)) * k` refers to the visual bottom of the rect?
+      // Yes, PDF 're' takes x, y (bottom-left), w, h.
+      // So 'y' is the bottom edge. 'y+h' is the top edge.
+
+      const left = x;
+      const right = x + w;
+      const bottom = y;
+      const top = y + h;
+
+      ops.push(`${(left + r).toFixed(2)} ${top.toFixed(2)} m`); // Move to Top-Left start (after corner)
+      ops.push(`${(right - r).toFixed(2)} ${top.toFixed(2)} l`); // Line to Top-Right start
+      ops.push(
+        `${(right - r + kr).toFixed(2)} ${top.toFixed(2)} ${right.toFixed(
+          2
+        )} ${(top - r + kr).toFixed(2)} ${right.toFixed(2)} ${(top - r).toFixed(
+          2
+        )} c`
+      ); // Curve to Top-Right end
+      ops.push(`${right.toFixed(2)} ${(bottom + r).toFixed(2)} l`); // Line to Bottom-Right start
+      ops.push(
+        `${right.toFixed(2)} ${(bottom + r - kr).toFixed(2)} ${(
+          right -
+          r +
+          kr
+        ).toFixed(2)} ${bottom.toFixed(2)} ${(right - r).toFixed(
+          2
+        )} ${bottom.toFixed(2)} c`
+      ); // Curve to Bottom-Right end
+      ops.push(`${(left + r).toFixed(2)} ${bottom.toFixed(2)} l`); // Line to Bottom-Left start
+      ops.push(
+        `${(left + r - kr).toFixed(2)} ${bottom.toFixed(2)} ${left.toFixed(
+          2
+        )} ${(bottom + r - kr).toFixed(2)} ${left.toFixed(2)} ${(
+          bottom + r
+        ).toFixed(2)} c`
+      ); // Curve to Bottom-Left end
+      ops.push(`${left.toFixed(2)} ${(top - r).toFixed(2)} l`); // Line to Top-Left start
+      ops.push(
+        `${left.toFixed(2)} ${(top - r + kr).toFixed(2)} ${(
+          left +
+          r -
+          kr
+        ).toFixed(2)} ${top.toFixed(2)} ${(left + r).toFixed(2)} ${top.toFixed(
+          2
+        )} c`
+      ); // Curve to Top-Left end (Close)
+
+      ops.push("f"); // Fill
+    } else {
+      ops.push(
+        `${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`
+      );
+    }
 
     ops.push("Q"); // Restore graphics state
 

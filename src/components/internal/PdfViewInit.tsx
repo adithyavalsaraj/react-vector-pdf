@@ -77,8 +77,13 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
           pdf.moveCursor(0, margin.top);
         }
 
+        // Support explicit height (e.g. for gaps/spacers)
+        if (typeof style.height === "number" && style.height > 0) {
+          pdf.moveCursor(0, style.height);
+        }
+
         // Start Recording children rendering
-        pdf.startRecording();
+        // pdf.startRecording(); // DISABLED due to React Effect ordering issues causing content to be excluded
 
         const start = pdf.getCursor();
         const page = pdf.getPageCount();
@@ -104,7 +109,8 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, x, y, w, h]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdf, style, x, y, w, h]);
 
   return null;
 };

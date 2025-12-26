@@ -1,16 +1,8 @@
-import React from "react";
+import React, { useId } from "react";
 import type { TextStyle } from "../core/types";
 import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
-
-export interface PdfListProps {
-  items: string[];
-  ordered?: boolean;
-  style?: TextStyle;
-  indent?: number; // mm
-  markerWidth?: number; // mm
-  spacing?: number; // mm between items
-}
+import { usePdfItemContext } from "./internal/PdfItemContext";
 
 export interface PdfListProps {
   items: string[];
@@ -32,6 +24,8 @@ export const PdfList: React.FC<PdfListProps> = ({
   className,
 }) => {
   const pdf = usePdf();
+  const context = usePdfItemContext();
+  const id = useId();
   const { ref, computeStyle } = useClassStyles(className);
 
   React.useLayoutEffect(() => {
@@ -43,24 +37,21 @@ export const PdfList: React.FC<PdfListProps> = ({
       ...style,
     };
 
-    // Handle Container Margin (e.g. mt-4)
-    const mt =
-      typeof computed.margin === "number"
-        ? computed.margin
-        : computed.margin?.top;
-    if (mt) {
-      pdf.moveCursor(0, mt);
-    }
+    const task = async () => {
+      // Handle Container Margin (e.g. mt-4)
+      const mt =
+        typeof computed.margin === "number"
+          ? computed.margin
+          : computed.margin?.top;
+      if (mt) {
+        pdf.moveCursor(0, mt);
+      }
 
-    pdf.queueOperation(() => {
       items.forEach((item, idx) => {
         const marker = ordered ? `${idx + 1}.` : "•";
         const fontSize = mergedStyle.fontSize ?? pdf.baseFont.size;
 
         // Check if we have space for at least one line of text
-        // This prevents the marker from being drawn on the current page
-        // while the text is pushed to the next page.
-        // We use a safe approximation of line height.
         const lineHeight = fontSize * 1.2 * 0.3528; // mm approx
         const currentY = pdf.getCursor().y;
 
@@ -73,7 +64,6 @@ export const PdfList: React.FC<PdfListProps> = ({
         const contentX = startX + indent + markerWidth;
 
         // Calculate baseline offset to align with paragraph text
-        // Paragraph logic: textY = cursorY + fontSize * 0.3528
         const textY = startY + fontSize * 0.3528;
 
         // Draw marker
@@ -87,7 +77,6 @@ export const PdfList: React.FC<PdfListProps> = ({
         );
 
         // Draw content
-        // We temporarily move cursor to content start
         pdf.setCursor(contentX, startY);
 
         // Calculate width available
@@ -108,9 +97,28 @@ export const PdfList: React.FC<PdfListProps> = ({
       if (mb) {
         pdf.moveCursor(0, mb);
       }
-    });
+    };
+
+    if (context) {
+      context.registerOperation(id, task);
+      return () => context.unregisterOperation(id);
+    } else {
+      pdf.queueOperation(task);
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, items, ordered, style, indent, markerWidth, spacing, className]);
+  }, [
+    pdf,
+    context,
+    id,
+    items,
+    ordered,
+    style,
+    indent,
+    markerWidth,
+    spacing,
+    className,
+  ]);
 
   return (
     <div

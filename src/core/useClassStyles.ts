@@ -9,16 +9,16 @@ const PX_TO_PT = 72 / RESOLUTION_DPI;
 const UNSUPPORTED_PROPERTIES = [
   "boxShadow",
   "textShadow",
-  "opacity",
+  // "opacity", // Ignored silently
   "zIndex",
-  "display",
-  "position",
+  // "display", // Ignored silently
+  // "position", // Ignored silently
   "float",
   "overflow",
   "cursor",
-  "transition",
+  // "transition", // Ignored silently
   "transform",
-  "animation",
+  // "animation", // Ignored silently
 ];
 
 const DISPLAY_BLOCK = "block";

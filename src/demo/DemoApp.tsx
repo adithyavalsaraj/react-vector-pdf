@@ -10,6 +10,7 @@ import { Tabs } from "./components/Tabs";
 import { ViewToggle } from "./components/ViewToggle";
 import { CenterLabelSettings } from "./components/settings/CenterLabelSettings";
 import { FooterSettings } from "./components/settings/FooterSettings";
+import { GlobalSettings } from "./components/settings/GlobalSettings";
 import { HeaderSettings } from "./components/settings/HeaderSettings";
 import { ImageSettings } from "./components/settings/ImageSettings";
 import { PageNumberSettings } from "./components/settings/PageNumberSettings";
@@ -92,6 +93,21 @@ export const DemoApp: React.FC = () => {
     setTableBorderWidth,
     tableHeaderColor,
     setTableHeaderColor,
+
+    // New State
+    metadata,
+    setMetadata,
+    layout,
+    setLayout,
+    margins,
+    setMargins,
+    typography,
+    setTypography,
+    baseColor,
+    setBaseColor,
+    autoSave,
+    setAutoSave,
+
     items,
     setItems,
     addItem,
@@ -154,6 +170,11 @@ export const DemoApp: React.FC = () => {
 
       const Root: React.FC = () => (
         <DemoPdfDocument
+          metadata={metadata}
+          layout={layout}
+          margins={margins}
+          typography={typography}
+          baseColor={baseColor}
           pnEnabled={pnEnabled}
           pnPos={pnPos}
           pnAlign={pnAlign}
@@ -216,11 +237,15 @@ export const DemoApp: React.FC = () => {
   const [isStale, setIsStale] = React.useState(false);
 
   const buildConfig = () => ({
+    autoSave,
+    metadata,
     options: {
-      margin: { top: 18, right: 15, bottom: 15, left: 15 },
-      font: { size: 12 },
-      color: "#111827",
-      lineHeight: 1.35,
+      margin: margins,
+      format: layout.format === "custom" ? [210, 297] : layout.format, // Simplification for demo
+      orientation: layout.orientation,
+      font: { size: typography.fontSize, name: typography.fontName },
+      color: baseColor,
+      lineHeight: typography.lineHeight,
     },
     header: createHeaderRenderer({
       enabled: headerEnabled,
@@ -340,7 +365,109 @@ export const DemoApp: React.FC = () => {
     tableStriped,
     tableBorderWidth,
     tableHeaderColor,
+    metadata,
+    layout,
+    margins,
+    typography,
+    baseColor,
+    autoSave,
+    metadata,
+    layout,
+    margins,
+    typography,
+    baseColor,
+    autoSave,
   ]);
+
+  const resetGlobalSettings = () => {
+    // Reset Metadata
+    setMetadata({
+      title: "",
+      author: "",
+      subject: "",
+      keywords: "",
+    });
+    // Reset Layout
+    setLayout({
+      format: "a4",
+      orientation: "p",
+    });
+    // Reset Margins
+    setMargins({
+      top: 15,
+      right: 15,
+      bottom: 15,
+      left: 15,
+    });
+    // Reset Typography
+    setTypography({
+      fontSize: 12,
+      lineHeight: 1.25,
+      fontName: "helvetica",
+    });
+    // Reset Color & AutoSave
+    setBaseColor("#111827");
+    setAutoSave(false);
+
+    // Reset Page Numbers
+    setPnEnabled(false);
+    setPnPos("footer");
+    setPnAlign("center");
+    setPnPreset("page-slash-total");
+    setPnTemplate("");
+    setPnFormat("arabic");
+    setPnScope("all");
+    setPnCustomPages("");
+    setPnY("");
+    setPnOffsetX("");
+    setPnFontSize("");
+    setPnColor("");
+
+    // Reset Center Label
+    setClEnabled(false);
+    setClPos("header");
+    setClText("DRAFT");
+    setClScope("all");
+    setClCustomPages("");
+    setClY("");
+    setClOffsetX("");
+    setClFontSize("");
+    setClColor("");
+
+    // Reset Header
+    setHeaderEnabled(false);
+    setHeaderText("Right Header Text");
+    setHeaderAlign("right");
+    setHeaderColor("");
+    setHeaderFontSize("");
+    setHeaderBorder(false);
+    setHeaderBorderColor("");
+    setHeaderScope("all");
+    setHeaderCustomPages("");
+
+    // Reset Footer
+    setFooterEnabled(false);
+    setFooterText("Left Footer Text");
+    setFooterAlign("left");
+    setFooterColor("");
+    setFooterFontSize("");
+    setFooterBorder(false);
+    setFooterBorderColor("");
+    setFooterScope("all");
+    setFooterCustomPages("");
+
+    // Reset Element Settings
+    setImgEnabled(false);
+    setImgLayout("fixed");
+    setImgSizing("fit");
+    setTableEnabled(false);
+    setTableStriped(false);
+    setTableBorderWidth("0.2");
+    setTableHeaderColor("");
+
+    // Reset Filename
+    setFilename("document.pdf");
+  };
 
   // Fixed full height layout
   return (
@@ -364,7 +491,7 @@ export const DemoApp: React.FC = () => {
           <div className="pane-left pane-scrollable">
             <div className="vstack gap-4">
               <div className="vstack">
-                <div className="hstack justify-between items-center sticky-top">
+                <div className="hstack justify-between items-center sticky-top py-2">
                   <h3 className="text-sm font-bold uppercase text-muted m-0">
                     Content
                   </h3>
@@ -388,9 +515,32 @@ export const DemoApp: React.FC = () => {
               <div className="hr"></div>
 
               <div className="vstack gap-4">
-                <h3 className="text-sm font-bold uppercase text-muted m-0 sticky-top">
-                  Global Settings
-                </h3>
+                <div className="hstack justify-between items-center sticky-top py-2">
+                  <h3 className="text-sm font-bold uppercase text-muted m-0">
+                    Global Settings
+                  </h3>
+                  <button
+                    className="btn btn-sm outline"
+                    onClick={resetGlobalSettings}
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                <GlobalSettings
+                  metadata={metadata}
+                  setMetadata={setMetadata}
+                  layout={layout as any}
+                  setLayout={setLayout}
+                  margins={margins}
+                  setMargins={setMargins}
+                  typography={typography}
+                  setTypography={setTypography}
+                  baseColor={baseColor}
+                  setBaseColor={setBaseColor}
+                  autoSave={autoSave}
+                  setAutoSave={setAutoSave}
+                />
 
                 <div className="card p-4 border rounded-md">
                   <div className="control">
@@ -574,6 +724,12 @@ export const DemoApp: React.FC = () => {
                   <CodeBlock
                     className="code-viewer-container"
                     code={generateReactCode(items, {
+                      metadata,
+                      layout,
+                      margins,
+                      typography,
+                      baseColor,
+                      autoSave,
                       pnEnabled,
                       pnPos,
                       pnAlign,

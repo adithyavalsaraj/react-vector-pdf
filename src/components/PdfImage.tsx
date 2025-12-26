@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useId } from "react";
 import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
+import { usePdfItemContext } from "./internal/PdfItemContext";
 
 export interface PdfImageProps {
   src: string;
@@ -51,6 +52,8 @@ export const PdfImage: React.FC<PdfImageProps> = ({
   style,
 }) => {
   const pdf = usePdf();
+  const context = usePdfItemContext();
+  const id = useId();
   const { ref, computeStyle } = useClassStyles(className, style);
 
   React.useLayoutEffect(() => {
@@ -88,7 +91,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     const renderX = x;
     const renderY = y;
 
-    pdf.queueOperation(async () => {
+    const task = async () => {
       const startPos = pdf.getCursor();
       const draw = async (reuseX?: number, reuseY?: number) => {
         const drawX = reuseX ?? renderX;
@@ -137,7 +140,14 @@ export const PdfImage: React.FC<PdfImageProps> = ({
           height: res.height + marginBottom,
         });
       }
-    });
+    };
+
+    if (context) {
+      context.registerOperation(id, task);
+      return () => context.unregisterOperation(id);
+    } else {
+      pdf.queueOperation(task);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

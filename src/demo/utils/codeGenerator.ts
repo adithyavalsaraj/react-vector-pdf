@@ -3,6 +3,13 @@ import { PdfItem } from "../types";
 export const generateReactCode = (
   items: PdfItem[],
   settings: {
+    metadata: any;
+    layout: any;
+    margins: any;
+    typography: any;
+    baseColor: string;
+    autoSave?: boolean;
+
     pnEnabled: boolean;
     pnPos: string;
     pnAlign: string;
@@ -42,18 +49,28 @@ export const generateReactCode = (
     footerBorder: boolean;
     footerBorderColor: string;
 
+    // Defaults for overrides (optional)
     imgLayout?: string;
     imgSizing?: string;
     tableStriped?: boolean;
     tableBorderWidth?: string;
     tableHeaderColor?: string;
-    margin?: { top: number; right: number; bottom: number; left: number };
   }
 ): string => {
   const itemCode = items
     .map((item) => {
-      let propsString = JSON.stringify(item.props, null, 2);
-      // Clean up the JSON string to look more like props
+      // 1. Extract known reserved props to avoid duplication
+      const {
+        showInAllPages,
+        scope,
+        className,
+        // Item specific props to handle separately
+        ...restProps
+      } = item.props as any;
+
+      let propsString = JSON.stringify(restProps, null, 2);
+
+      // Clean up JSON to JSX-like props
       propsString = propsString
         .replace(/^\{\n/, "")
         .replace(/\n\}$/, "")
@@ -65,42 +82,38 @@ export const generateReactCode = (
         propsString = propsString.replace(/,\n/g, " ");
       }
 
+      // 2. Build common props list
       const commonProps = [];
       if (item.showInAllPages) commonProps.push("showInAllPages");
       if (item.scope) commonProps.push(`scope={${JSON.stringify(item.scope)}}`);
+      if (item.props.className)
+        commonProps.push(`className="${item.props.className}"`);
 
       const commonPropsStr = commonProps.length
         ? "\n    " + commonProps.join("\n    ")
         : "";
 
+      // 3. Item specific logic overrides
       switch (item.type) {
         case "text":
           return `  <PdfText\n    ${propsString}${commonPropsStr}\n  />`;
         case "image":
-          let imgProps = "";
-          if (settings.imgLayout && settings.imgLayout !== "fixed")
-            imgProps += `\n    layout="${settings.imgLayout}"`;
-          if (settings.imgSizing && settings.imgSizing !== "fit")
-            imgProps += `\n    sizing="${settings.imgSizing}"`;
+          // Handle overrides: if prop is set in item, it's already in 'restProps' (JSON.stringify)
+          // If we want to show global defaults explicitly, we'd need to merge.
+          // But here we just show what's on the item.
+          return `  <PdfImage\n    ${propsString}${commonPropsStr}\n  />`;
 
-          return `  <PdfImage\n    ${propsString}${imgProps}${commonPropsStr}\n  />`;
         case "table":
-          let tableProps = "";
-          if (settings.tableStriped) tableProps += `\n    striped`;
-          if (settings.tableBorderWidth && settings.tableBorderWidth !== "0.1")
-            tableProps += `\n    borderWidth={${settings.tableBorderWidth}}`;
-          if (
-            settings.tableHeaderColor &&
-            settings.tableHeaderColor !== "#e4e4e7"
-          ) {
-            tableProps += `\n    headerStyle={{ fillColor: "${settings.tableHeaderColor}", fontStyle: "bold" }}`;
-          }
+          // Similar logic, propsString contains overrides if they exist in item.props
+          // However, we might want to comment about data structure
+          return `  <PdfTable\n    data={data} \n    columns={columns}${commonPropsStr}\n    ${propsString}\n  />`;
 
-          return `  <PdfTable\n    data={data} // Replace with your data\n    columns={columns} // Replace with your columns${tableProps}${commonPropsStr}\n  />`;
         case "list":
           return `  <PdfList\n    ${propsString}${commonPropsStr}\n  />`;
+
         case "view":
-          return `  <PdfView\n    style={{ ... }}${commonPropsStr}\n  >\n    {/* Content */}\n  </PdfView>`;
+          return `  <PdfView\n    ${propsString}${commonPropsStr}\n  >\n    {/* Children content */}\n  </PdfView>`;
+
         default:
           return "";
       }
@@ -113,12 +126,9 @@ export const generateReactCode = (
         const pdf = renderer.instance;
         pdf.setFontSize(${settings.headerFontSize || 10});
         pdf.setTextColor('${settings.headerColor || "#000000"}');
-        
-        // Align logic
         const text = "${settings.headerText}";
-        // ... (implementation of alignment logic here similar to pdfHelpers.ts)
+        // ... alignment logic ...
         pdf.text(text, renderer.contentLeft, 10);
-        
         ${
           settings.headerBorder
             ? `pdf.setDrawColor('${
@@ -134,9 +144,7 @@ export const generateReactCode = (
     return `(renderer) => {
           const pdf = renderer.instance;
           pdf.setFontSize(${settings.footerFontSize || 9});
-          pdf.setTextColor('${settings.footerColor || "#000000"}'); // ${
-      settings.footerColor
-    }
+          pdf.setTextColor('${settings.footerColor || "#000000"}'); 
           const y = renderer.height - 10;
           pdf.text("${settings.footerText}", renderer.contentLeft, y);
           ${
@@ -199,21 +207,30 @@ export const generateReactCode = (
     : "undefined";
 
   return `import React from 'react';
-import { PdfDocument, PdfText, PdfImage, PdfTable, PdfList } from 'react-vector-pdf';
+import { PdfDocument, PdfText, PdfImage, PdfTable, PdfList, PdfView } from 'react-vector-pdf';
 
 export const MyPdfDocument = () => {
+  const data = [/* ... */];
+  const columns = [/* ... */];
+
   return (
     <PdfDocument
+      metadata={${JSON.stringify(settings.metadata, null, 2)}}
       options={{
-        margin: { top: 18, right: 15, bottom: 15, left: 15 },
-        font: { size: 12 },
-        color: "#111827",
-        lineHeight: 1.35,
+        format: "${settings.layout.format}",
+        orientation: "${settings.layout.orientation}",
+        margin: ${JSON.stringify(settings.margins)},
+        font: { size: ${settings.typography.fontSize}, name: "${
+    settings.typography.fontName
+  }" },
+        color: "${settings.baseColor}",
+        lineHeight: ${settings.typography.lineHeight},
       }}
       header={${buildHeaderCode()}}
       footer={${buildFooterCode()}}
       pageNumbers={${pnConfig}}
       centerLabel={${clConfig}}
+      autoSave={${settings.autoSave}}
     >
 ${itemCode}
     </PdfDocument>

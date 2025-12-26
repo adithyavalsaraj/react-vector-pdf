@@ -31,7 +31,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       if (!start) return;
 
       // Stop Recording
-      const ops = pdf.stopRecording();
+      // const ops = pdf.stopRecording(); // DISABLED
 
       // Clear the height reservation
       // We keep it during playback to ensure consistent layout, clear it at the very end
@@ -41,14 +41,13 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
         boxW = style.width;
       }
 
-      // STRATEGY: Single Pass with Stream Injection
-      // 1. Playback content (Single Pass) - Layout is preserved.
-      // 2. Calculate Page Geometry.
-      // 3. Inject Background Fill (BEHIND CONTENT) into Page Stream.
-      // 4. Draw Borders (FOREGROUND) using standard draw commands.
+      // STRATEGY: Single Pass (No Record/Playback)
+      // 1. Calculate Page Geometry based on current cursor (after children drawn)
+      // 2. Inject Background Fill (BEHIND CONTENT) into Page Stream.
+      // 3. Draw Borders (FOREGROUND) using standard draw commands.
 
-      // Pass 1: Layout
-      pdf.playback(ops);
+      // Pass 1: Layout - Already done by children
+      // pdf.playback(ops); // DISABLED
 
       const endPage = pdf.getPageCount();
       const after = pdf.getCursor();
@@ -91,25 +90,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
           drawH = pdf.height - pdf.margin.bottom - pdf.contentTop;
         }
 
-        // Draw Background (Inject Fill Behind)
-        if (style.fillColor) {
-          const rectX = p === startPage ? start.x : pdf.contentLeft;
-          const rectY = drawY;
-          const rectW = boxW;
-          const rectH = drawH;
-
-          // Inject Fill
-          // Note: We use the renderer instance to inject into internal stream
-          if ((pdf as any).injectFill) {
-            (pdf as any).injectFill(
-              p,
-              { x: rectX, y: rectY, w: rectW, h: rectH },
-              style.fillColor
-            );
-          }
-        }
-
-        // Draw Borders (Foreground)
+        // Draw Borders (Foreground) - Draw first to ensure they appear even if background injection fails
         if (style.borderColor || style.borderWidth) {
           const inst = pdf.instance;
           const width = style.borderWidth ?? 0.1;
@@ -128,6 +109,28 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
 
           if (p === startPage) inst.line(gx, gy, gx + gw, gy);
           if (p === endPage) inst.line(gx, gy + gh, gx + gw, gy + gh);
+        }
+
+        // Draw Background (Inject Fill Behind)
+        if (style.fillColor) {
+          const rectX = p === startPage ? start.x : pdf.contentLeft;
+          const rectY = drawY;
+          const rectW = boxW;
+          const rectH = drawH;
+
+          // Inject Fill
+          // We wrap this in try-catch to prevent crashes from aborting the rest of the render (though borders are now safe)
+          try {
+            if ((pdf as any).injectFill) {
+              (pdf as any).injectFill(
+                p,
+                { x: rectX, y: rectY, w: rectW, h: rectH },
+                style.fillColor
+              );
+            }
+          } catch (e) {
+            console.warn("Background injection failed", e);
+          }
         }
       }
 
@@ -163,7 +166,8 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       if (pdf.popIndent) pdf.popIndent();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, style.showInAllPages, style.scope, w, h]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdf, style, w, h]);
 
   return null;
 };

@@ -89,22 +89,19 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
           />
         );
       case "view":
+        const content = item.props.children;
+        // PdfView requires children to register via context. Raw strings won't do that.
+        // So we wrap text content in PdfText.
+        const viewChild =
+          typeof content === "string" ? <PdfText>{content}</PdfText> : content;
         return (
           <PdfView
             key={item.id}
             {...item.props}
+            className={item.props.className ?? "mb-4"}
             {...common}
-            // Add a gap class for demonstration if it's a view item
-            className={`${item.props.className || ""} gap-2`}
           >
-            {typeof item.props.children === "string" ? (
-              <>
-                <PdfText>{`${item.props.children} (Item 1)`}</PdfText>
-                <PdfText>{`${item.props.children} (Item 2 - Gap Test)`}</PdfText>
-              </>
-            ) : (
-              item.props.children
-            )}
+            {viewChild}
           </PdfView>
         );
       default:

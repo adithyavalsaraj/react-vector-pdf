@@ -1,4 +1,5 @@
 import React from "react";
+import { ColorPicker } from "../ColorPicker";
 
 export interface TableItemEditorProps {
   props: any;
@@ -14,6 +15,186 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
 
   return (
     <div className="control col-span-3 card p-2 bg-light vstack gap-3">
+      <div className="hstack justify-between">
+        <label className="font-bold">Table Configuration</label>
+      </div>
+
+      <div className="grid grid-2 gap-2">
+        {/* ClassName */}
+        <div className="control col-span-2">
+          <label>CSS Class</label>
+          <input
+            type="text"
+            value={props.className || ""}
+            onChange={(e) => onChange({ className: e.target.value })}
+            placeholder="e.g. mb-4 text-sm"
+            className="input-sm"
+          />
+        </div>
+
+        {/* Global Table Settings */}
+        <div className="control">
+          <label>Border Width (mm)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="Global"
+            value={props.borderWidth ?? ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange({
+                borderWidth: val === "" ? undefined : Math.max(0, Number(val)),
+              });
+            }}
+            className="input-sm"
+          />
+        </div>
+
+        <div className="control">
+          <label>Cell Padding (mm)</label>
+          <input
+            type="number"
+            min="0"
+            placeholder="Default"
+            value={props.cellPadding ?? ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange({
+                cellPadding: val === "" ? undefined : Math.max(0, Number(val)),
+              });
+            }}
+            className="input-sm"
+          />
+        </div>
+      </div>
+
+      <div className="hr"></div>
+
+      {/* HEADER Configuration */}
+      <div>
+        <label className="font-bold text-xs uppercase text-muted mb-2 block">
+          Header Styling
+        </label>
+        <div className="grid grid-2 gap-2">
+          <ColorPicker
+            label="Background Color"
+            value={props.headerStyle?.fillColor}
+            onChange={(val) =>
+              onChange({
+                headerStyle: {
+                  ...props.headerStyle,
+                  fillColor: val || undefined,
+                },
+              })
+            }
+          />
+          <ColorPicker
+            label="Text Color"
+            value={props.headerStyle?.color}
+            onChange={(val) =>
+              onChange({
+                headerStyle: { ...props.headerStyle, color: val || undefined },
+              })
+            }
+          />
+          <div className="control">
+            <label>Vertical Align</label>
+            <select
+              value={props.headerStyle?.verticalAlign ?? "middle"}
+              onChange={(e) =>
+                onChange({
+                  headerStyle: {
+                    ...props.headerStyle,
+                    verticalAlign: e.target.value,
+                  },
+                })
+              }
+              className="select-sm"
+            >
+              <option value="top">Top</option>
+              <option value="middle">Middle</option>
+              <option value="bottom">Bottom</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="hr"></div>
+
+      {/* BODY / ROW Configuration */}
+      <div>
+        <label className="font-bold text-xs uppercase text-muted mb-2 block">
+          Row Styling
+        </label>
+        <div className="grid grid-2 gap-2">
+          <div className="control">
+            <label>Striped Rows</label>
+            <select
+              value={
+                props.striped === undefined
+                  ? "global"
+                  : props.striped
+                  ? "yes"
+                  : "no"
+              }
+              onChange={(e) =>
+                onChange({
+                  striped:
+                    e.target.value === "global"
+                      ? undefined
+                      : e.target.value === "yes",
+                })
+              }
+              className="select-sm"
+            >
+              <option value="global">Global Setting</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          {/* Stripe Color (only if striped is yes or global?) - Let's just show it */}
+          <ColorPicker
+            label="Stripe Color"
+            value={props.stripeColor}
+            onChange={(val) => onChange({ stripeColor: val || undefined })}
+          />
+
+          <ColorPicker
+            label="Text Color"
+            value={props.rowStyle?.color}
+            onChange={(val) =>
+              onChange({
+                rowStyle: { ...props.rowStyle, color: val || undefined },
+              })
+            }
+          />
+
+          <div className="control">
+            <label>Vertical Align</label>
+            <select
+              value={props.rowStyle?.verticalAlign ?? "top"}
+              onChange={(e) =>
+                onChange({
+                  rowStyle: {
+                    ...props.rowStyle,
+                    verticalAlign: e.target.value,
+                  },
+                })
+              }
+              className="select-sm"
+            >
+              <option value="top">Top</option>
+              <option value="middle">Middle</option>
+              <option value="bottom">Bottom</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="hr"></div>
+
       <div>
         <label className="mb-1 block">Columns</label>
         <div className="vstack gap-1">
@@ -30,6 +211,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   };
                   onChange({ columns: newCols });
                 }}
+                className="input-sm"
               />
               <input
                 placeholder="Prop"
@@ -42,6 +224,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   };
                   onChange({ columns: newCols });
                 }}
+                className="input-sm"
               />
               <button
                 className="btn btn-xs danger"
@@ -100,7 +283,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                     >
                       <span className="text-xs text-muted">{col.header}</span>
                       <input
-                        className="text-xs"
+                        className="text-xs input-sm"
                         value={cell.content}
                         onChange={(e) => {
                           const newData = [...data];
@@ -119,7 +302,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                           <span className="text-2xs text-muted">RowSpan</span>
                           <input
                             type="number"
-                            className="text-xs w-full"
+                            className="text-xs w-full input-sm"
                             value={cell.rowSpan || ""}
                             onChange={(e) => {
                               const raw = parseInt(e.target.value);
@@ -151,7 +334,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                           <span className="text-2xs text-muted">ColSpan</span>
                           <input
                             type="number"
-                            className="text-xs w-full"
+                            className="text-xs w-full input-sm"
                             value={cell.colSpan || ""}
                             onChange={(e) => {
                               const raw = parseInt(e.target.value);
