@@ -105,14 +105,17 @@ You can use standard CSS classes (including generic CSS or utility frameworks li
   Styled with Tailwind!
 </PdfText>
 
-<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded">
+<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded gap-4">
   <PdfText className="text-gray-800">
     This box uses utility classes for padding, border, and background.
+  </PdfText>
+  <PdfText>
+    Items inside this view are separated by a 1rem (approx 4mm) gap.
   </PdfText>
 </PdfView>
 ```
 
-> **Note**: Properties like `display: flex` or `grid` are **not supported** as PDF layout is strictly standard flow or absolute positioning. Only box-model properties (padding/margin/border) and typography/color styles are mapped.
+> **Note**: Properties like `display: flex` or `grid` are **not supported** as PDF layout is strictly standard flow or absolute positioning. However, `gap` **is supported** in `PdfView` to add spacing between flow items. Only box-model properties (padding/margin/border/gap) and typography/color styles are mapped.
 
 ## Components
 

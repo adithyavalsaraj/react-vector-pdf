@@ -38,6 +38,7 @@ export interface BoxStyle {
   paddingRight?: number;
   paddingBottom?: number;
   paddingLeft?: number;
+  gap?: number;
 }
 
 export interface ViewStyle extends BoxStyle {

@@ -113,7 +113,22 @@ export const PdfView: React.FC<PdfViewProps> = ({
         h={h}
         viewState={viewState}
       />
-      {children}
+      {mergedStyle.gap
+        ? React.Children.map(children, (child, index) => {
+            if (!child) return null;
+            return (
+              <React.Fragment>
+                {index > 0 && (
+                  <PdfViewInit
+                    style={{ height: mergedStyle.gap }}
+                    viewState={{}}
+                  />
+                )}
+                {child}
+              </React.Fragment>
+            );
+          })
+        : children}
       <PdfViewFinisher
         viewState={viewState}
         style={mergedStyle}

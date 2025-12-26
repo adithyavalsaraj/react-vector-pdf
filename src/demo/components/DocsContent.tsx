@@ -304,12 +304,20 @@ export const DocsContent: React.FC = () => {
   Styled with Tailwind!
 </PdfText>
 
-<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded">
+<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded gap-4">
   <PdfText className="text-gray-800">
     This box has padding, border, and background color defined via classes.
   </PdfText>
+  <PdfText>
+    Items inside this view are separated by a 1rem gap.
+  </PdfText>
 </PdfView>`}
       />
+
+      <div className="alert alert-info">
+        <strong>Note:</strong> <code>gap</code> styling is supported in{" "}
+        <code>PdfView</code> to add spacing between children items.
+      </div>
 
       <div className="hr"></div>
 

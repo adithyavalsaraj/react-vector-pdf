@@ -217,6 +217,10 @@ export function useClassStyles(
       if (hMm && hMm > 0) res.height = hMm;
     }
 
+    // Gap
+    const gap = pxToMm(computed.gap) ?? pxToMm(computed.rowGap);
+    if (gap) res.gap = gap;
+
     // Radius
     const rad = pxToMm(computed.borderRadius);
     if (rad) res.radius = rad;

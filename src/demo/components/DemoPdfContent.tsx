@@ -90,9 +90,18 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
         );
       case "view":
         return (
-          <PdfView key={item.id} {...item.props} {...common}>
+          <PdfView
+            key={item.id}
+            {...item.props}
+            {...common}
+            // Add a gap class for demonstration if it's a view item
+            className={`${item.props.className || ""} gap-2`}
+          >
             {typeof item.props.children === "string" ? (
-              <PdfText>{item.props.children}</PdfText>
+              <>
+                <PdfText>{`${item.props.children} (Item 1)`}</PdfText>
+                <PdfText>{`${item.props.children} (Item 2 - Gap Test)`}</PdfText>
+              </>
             ) : (
               item.props.children
             )}
