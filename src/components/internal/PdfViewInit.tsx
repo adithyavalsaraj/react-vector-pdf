@@ -5,10 +5,14 @@ import { usePdf } from "../PdfProvider";
 
 export interface PdfViewInitProps {
   style: ViewStyle;
+  className?: string;
+  computeStyle: () => any;
   x?: number;
   y?: number;
   w?: number;
   h?: number;
+  showInAllPages?: boolean;
+  scope?: any;
   viewState: {
     start?: { x: number; y: number; page?: number };
     isAbsolute?: boolean;
@@ -34,32 +38,68 @@ function resolveMargin(
 }
 
 export const PdfViewInit: React.FC<PdfViewInitProps> = ({
-  style,
+  style: styleProp,
+  className,
+  computeStyle,
   x,
   y,
   w,
   h,
+  showInAllPages,
+  scope,
   viewState,
 }) => {
   const pdf = usePdf();
-  const basePad = resolvePadding(style.padding);
-  const pad = {
-    top: style.paddingTop ?? basePad.top,
-    right: style.paddingRight ?? basePad.right,
-    bottom: style.paddingBottom ?? basePad.bottom,
-    left: style.paddingLeft ?? basePad.left,
-  };
-
-  const baseMargin = resolveMargin(style.margin);
-  const margin = {
-    top: style.marginTop ?? baseMargin.top,
-    right: style.marginRight ?? baseMargin.right,
-    bottom: style.marginBottom ?? baseMargin.bottom,
-    left: style.marginLeft ?? baseMargin.left,
-  };
+  const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
 
   React.useLayoutEffect(() => {
+    // Only queue once per renderer instance/generation to prevent double-indents
+    if (
+      queuedRef.current?.pdf === pdf &&
+      queuedRef.current?.gen === pdf.generation
+    )
+      return;
+    queuedRef.current = { pdf, gen: pdf.generation };
+
     pdf.queueOperation(() => {
+      // Resolve styles inside the queue when DOM is ready
+      const computed = computeStyle();
+      let style = { ...computed, ...styleProp } as ViewStyle;
+
+      // Smart Defaults: matching PdfView.tsx logic but inside the queue
+      const hasBg = !!style.fillColor;
+      const hasBorder = !!style.borderColor || (style.borderWidth ?? 0) > 0;
+      const styleHasPadding =
+        styleProp.padding !== undefined ||
+        styleProp.paddingTop !== undefined ||
+        styleProp.paddingRight !== undefined ||
+        styleProp.paddingBottom !== undefined ||
+        styleProp.paddingLeft !== undefined;
+
+      if ((hasBg || hasBorder) && !styleHasPadding && !className) {
+        style.padding = 4;
+      }
+
+      // Merge props
+      if (showInAllPages !== undefined) style.showInAllPages = showInAllPages;
+      if (scope !== undefined) style.scope = scope;
+
+      const basePad = resolvePadding(style.padding);
+      const pad = {
+        top: style.paddingTop ?? basePad.top,
+        right: style.paddingRight ?? basePad.right,
+        bottom: style.paddingBottom ?? basePad.bottom,
+        left: style.paddingLeft ?? basePad.left,
+      };
+
+      const baseMargin = resolveMargin(style.margin);
+      const margin = {
+        top: style.marginTop ?? baseMargin.top,
+        right: style.marginRight ?? baseMargin.right,
+        bottom: style.marginBottom ?? baseMargin.bottom,
+        left: style.marginLeft ?? baseMargin.left,
+      };
+
       if (
         typeof x === "number" &&
         typeof y === "number" &&
@@ -93,8 +133,12 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
         // We use pushIndent to ensure this indentation persists across page breaks (e.g. implicitly added pages)
         // @ts-ignore
         if (pdf.pushIndent) {
-          // @ts-ignore
-          pdf.pushIndent(pad.left, pad.right);
+          // Apply Indentation
+          if (pad.left > 0 || pad.right > 0) {
+            // @ts-ignore
+            pdf.pushIndent(pad.left, pad.right);
+            (viewState as any).hasIndent = true;
+          }
 
           // Also move Y for padding Top
           // Note: pushIndent moves X, but Y is handled by moveCursor
@@ -109,8 +153,7 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, style, x, y, w, h]);
+  }, [pdf, styleProp, x, y, w, h, showInAllPages, scope]);
 
   return null;
 };

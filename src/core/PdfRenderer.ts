@@ -39,7 +39,7 @@ export class PdfRenderer {
 
   private pendingTasks: Set<Promise<any>> = new Set();
   private opQueue: Promise<void> = Promise.resolve();
-  private generation = 0;
+  public generation = 0;
 
   // Recording Stack for nested buffering
   private recordingStack: Array<Array<() => void>> = [];
@@ -116,6 +116,31 @@ export class PdfRenderer {
   }
   get contentTop() {
     return this.margin.top;
+  }
+
+  /**
+   * Returns the top Y position for content on a given page, accounting for recurring items.
+   * This is useful for drawing background boxes that shouldn't overlap headers.
+   */
+  getSafeContentTop(pageNum: number) {
+    let top = this.margin.top;
+
+    // Check all recurring items that apply to this page
+    for (const item of this.recurringItems) {
+      if (inScope(pageNum, item.scope)) {
+        // If the item starts near the top (e.g. typical header), assume it pushes content down.
+        // We use a loose heuristic (top 50% of page) to detect top-anchored recurring items.
+        // Ideally, recurring items explicitly declare if they are headers, but position is a good proxy.
+        // We also check if the item.y is effectively the current top margin or higher.
+        if (item.y <= top + 10) {
+          const itemBottom = item.y + item.height;
+          if (itemBottom > top) {
+            top = itemBottom;
+          }
+        }
+      }
+    }
+    return top;
   }
   get contentBottom() {
     return this.pageHeight - this.margin.bottom - this.reservedBottomHeight;
@@ -203,8 +228,12 @@ export class PdfRenderer {
 
     this.cursorX = 0;
     this.cursorY = 0;
+    this.reservedBottomHeight = 0;
     this.pendingTasks = new Set();
     this.opQueue = Promise.resolve();
+    this.indentStack = [];
+    this.currentIndent = { left: 0, right: 0 };
+    this.recordingStack = [];
 
     // Re-apply defaults
     this.resetFlowCursor();
@@ -249,6 +278,9 @@ export class PdfRenderer {
   }
 
   addPage() {
+    // Save current horizontal state (indentation)
+    const savedIndentX = this.margin.left + this.currentIndent.left;
+
     this.drawOp(() => {
       this.pdf.addPage();
     });
@@ -265,6 +297,9 @@ export class PdfRenderer {
         }
       }
     }
+
+    // Restore horizontal cursor to the intended indentation
+    this.cursorX = savedIndentX;
   }
 
   private ensureSpace(neededHeight: number) {

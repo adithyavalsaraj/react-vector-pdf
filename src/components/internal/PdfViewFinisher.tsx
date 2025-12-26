@@ -1,6 +1,6 @@
 import React from "react";
 import type { ViewStyle } from "../../core/types";
-import { hexToRgb } from "../../core/utils";
+import { hexToRgb, resolvePadding } from "../../core/utils";
 import { usePdf } from "../PdfProvider";
 
 export interface PdfViewFinisherProps {
@@ -9,37 +9,100 @@ export interface PdfViewFinisherProps {
     isAbsolute?: boolean;
   };
   style: ViewStyle;
-  pad: { top: number; right: number; bottom: number; left: number };
-  margin: { top: number; right: number; bottom: number; left: number };
+  className?: string;
+  computeStyle: () => any;
+  x?: number;
+  y?: number;
   w?: number;
   h?: number;
+  showInAllPages?: boolean;
+  scope?: any;
 }
 
 export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
   viewState,
-  style,
-  pad,
-  margin,
+  style: styleProp,
+  className,
+  computeStyle,
   w,
   h,
+  showInAllPages,
+  scope: scopeProp,
 }) => {
   const pdf = usePdf();
+  const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
 
   React.useLayoutEffect(() => {
+    // Only queue once per renderer instance/generation to prevent double-drawing
+    if (
+      queuedRef.current?.pdf === pdf &&
+      queuedRef.current?.gen === pdf.generation
+    )
+      return;
+    queuedRef.current = { pdf, gen: pdf.generation };
+
     pdf.queueOperation(() => {
       const start = viewState.start;
       if (!start) return;
 
-      // Stop Recording
-      // const ops = pdf.stopRecording(); // DISABLED
+      // Resolve styles inside the queue
+      const computed = computeStyle();
+      let style = { ...computed, ...styleProp } as ViewStyle;
 
-      // Clear the height reservation
-      // We keep it during playback to ensure consistent layout, clear it at the very end
+      // Smart Defaults: matching logic in Init
+      const hasBg = !!style.fillColor;
+      const hasBorder = !!style.borderColor || (style.borderWidth ?? 0) > 0;
+      const styleHasPadding =
+        styleProp.padding !== undefined ||
+        styleProp.paddingTop !== undefined ||
+        styleProp.paddingRight !== undefined ||
+        styleProp.paddingBottom !== undefined ||
+        styleProp.paddingLeft !== undefined;
 
+      if ((hasBg || hasBorder) && !styleHasPadding && !className) {
+        style.padding = 4;
+      }
+
+      // Merge props
+      if (showInAllPages !== undefined) style.showInAllPages = showInAllPages;
+      if (scopeProp !== undefined) style.scope = scopeProp;
+
+      const basePad = resolvePadding(style.padding);
+      const pad = {
+        top: style.paddingTop ?? basePad.top,
+        right: style.paddingRight ?? basePad.right,
+        bottom: style.paddingBottom ?? basePad.bottom,
+        left: style.paddingLeft ?? basePad.left,
+      };
+
+      const resolvedMargin = (
+        m?:
+          | number
+          | { top?: number; right?: number; bottom?: number; left?: number }
+      ) => {
+        if (typeof m === "number")
+          return { top: m, right: m, bottom: m, left: m };
+        return {
+          top: m?.top ?? 0,
+          right: m?.right ?? 0,
+          bottom: m?.bottom ?? 0,
+          left: m?.left ?? 0,
+        };
+      };
+      const baseMargin = resolvedMargin(style.margin);
+      const margin = {
+        top: style.marginTop ?? baseMargin.top,
+        right: style.marginRight ?? baseMargin.right,
+        bottom: style.marginBottom ?? baseMargin.bottom,
+        left: style.marginLeft ?? baseMargin.left,
+      };
+
+      // Box width
       let boxW = w ?? pdf.contentAreaWidth;
       if (typeof style.width === "number") {
         boxW = style.width;
       }
+      const boxWidthWithPadding = boxW + pad.left + pad.right;
 
       // STRATEGY: Single Pass (No Record/Playback)
       // 1. Calculate Page Geometry based on current cursor (after children drawn)
@@ -57,7 +120,12 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       for (let p = startPage; p <= endPage; p++) {
         pdf.instance.setPage(p);
 
-        let drawY = pdf.contentTop;
+        // Calculate safe top position (accounting for recurring headers)
+        const safeTop = (pdf as any).getSafeContentTop
+          ? (pdf as any).getSafeContentTop(p)
+          : pdf.contentTop;
+
+        let drawY = safeTop;
         let drawH: number;
 
         if (p === startPage) {
@@ -75,33 +143,40 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
           }
         } else if (p === endPage) {
           // Last page of multi-page
-          drawY = pdf.contentTop;
+          drawY = safeTop;
           if (style.height) {
-            drawH = after.y - pdf.contentTop + pad.bottom;
+            drawH = after.y - safeTop + pad.bottom;
           } else {
-            drawH = after.y - pdf.contentTop + pad.bottom;
+            drawH = after.y - safeTop + pad.bottom;
           }
           // Clamp to physical margins, effectively ignoring reserved height (padding) for the box itself
           const physicalBottom = pdf.height - pdf.margin.bottom;
-          drawH = Math.min(drawH, physicalBottom - pdf.contentTop);
+          drawH = Math.min(drawH, physicalBottom - safeTop);
         } else {
           // Middle page
-          drawY = pdf.contentTop;
-          drawH = pdf.height - pdf.margin.bottom - pdf.contentTop;
+          drawY = safeTop;
+          drawH = pdf.height - pdf.margin.bottom - safeTop;
         }
 
+        // Safety: Ensure we don't draw negative or near-zero height boxes
+        // This prevents artifacts (extra empty borders) when layout calculations result in tiny fragments
+        if (drawH < 0.5 || isNaN(drawH)) continue;
+
         // Draw Borders (Foreground) - Draw first to ensure they appear even if background injection fails
-        if (style.borderColor || style.borderWidth) {
+        // Only draw border if borderWidth is explicitly set and > 0
+        if (style.borderWidth && style.borderWidth > 0) {
           const inst = pdf.instance;
-          const width = style.borderWidth ?? 0.1;
+          const width = style.borderWidth;
           const color = style.borderColor ?? "#000000";
           inst.setLineWidth(width);
           const rgb = hexToRgb(color);
           if (rgb) inst.setDrawColor(rgb[0], rgb[1], rgb[2]);
 
-          const gx = p === startPage ? start.x : pdf.contentLeft;
+          // Border box X position: use start.x consistently on ALL pages
+          // Safety: Clamp to margin.left to prevent any weird negative shifts, though start.x should be safe
+          const gx = Math.max(start.x, pdf.margin.left);
           const gy = drawY;
-          const gw = boxW;
+          const gw = boxWidthWithPadding;
           const gh = drawH;
 
           inst.line(gx, gy, gx, gy + gh);
@@ -113,9 +188,11 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
 
         // Draw Background (Inject Fill Behind)
         if (style.fillColor) {
-          const rectX = p === startPage ? start.x : pdf.contentLeft;
+          // Background box X position: use start.x consistently on ALL pages
+          // Safety: Clamp to margin.left
+          const rectX = Math.max(start.x, pdf.margin.left);
           const rectY = drawY;
-          const rectW = boxW;
+          const rectW = boxWidthWithPadding;
           const rectH = drawH;
 
           // Inject Fill
@@ -162,12 +239,13 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       pdf.setReservedHeight(0);
 
       // Restore Indentation
-      // @ts-ignore
-      if (pdf.popIndent) pdf.popIndent();
+      if ((viewState as any).hasIndent) {
+        // @ts-ignore
+        if (pdf.popIndent) pdf.popIndent();
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, style, w, h]);
+  }, [pdf, styleProp, w, h, showInAllPages, scopeProp]);
 
   return null;
 };

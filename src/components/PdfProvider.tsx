@@ -47,6 +47,9 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
 }) => {
   const renderer = React.useMemo(() => new PdfRenderer(options), [options]);
 
+  // Synchronously reset the document on every build pass to ensure clean state
+  renderer.reset();
+
   React.useEffect(() => {
     if (metadata) {
       renderer.setMetadata(metadata);

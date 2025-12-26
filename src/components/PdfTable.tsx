@@ -61,8 +61,17 @@ export const PdfTable: React.FC<PdfTableProps> = ({
   const context = usePdfItemContext();
   const id = useId();
   const { ref, computeStyle } = useClassStyles(className, style);
+  const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
 
   React.useLayoutEffect(() => {
+    // Prevent double-queuing for same document generation
+    if (
+      queuedRef.current?.pdf === pdf &&
+      queuedRef.current?.gen === pdf.generation
+    )
+      return;
+    queuedRef.current = { pdf, gen: pdf.generation };
+
     const computed = computeStyle();
 
     // Resolve Table Level Styles

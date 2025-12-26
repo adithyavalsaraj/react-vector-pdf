@@ -28,8 +28,17 @@ export const PdfText: React.FC<PdfTextProps> = ({
   const context = usePdfItemContext();
   const id = useId();
   const { ref, computeStyle } = useClassStyles(className, styleProp);
+  const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
 
   React.useLayoutEffect(() => {
+    // Prevent double-queuing for the same document generation
+    if (
+      queuedRef.current?.pdf === pdf &&
+      queuedRef.current?.gen === pdf.generation
+    )
+      return;
+    queuedRef.current = { pdf, gen: pdf.generation };
+
     const resolved = computeStyle();
 
     const finalStyle = {
