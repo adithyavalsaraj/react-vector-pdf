@@ -1,5 +1,6 @@
 import React from "react";
 import type { TextStyle } from "../core/types";
+import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
 
 export interface PdfListProps {
@@ -11,6 +12,16 @@ export interface PdfListProps {
   spacing?: number; // mm between items
 }
 
+export interface PdfListProps {
+  items: string[];
+  ordered?: boolean;
+  style?: TextStyle;
+  indent?: number; // mm
+  markerWidth?: number; // mm
+  spacing?: number; // mm between items
+  className?: string;
+}
+
 export const PdfList: React.FC<PdfListProps> = ({
   items,
   ordered = false,
@@ -18,14 +29,33 @@ export const PdfList: React.FC<PdfListProps> = ({
   indent = 5,
   markerWidth = 5,
   spacing = 2,
+  className,
 }) => {
   const pdf = usePdf();
+  const { ref, computeStyle } = useClassStyles(className);
 
   React.useLayoutEffect(() => {
+    const computed = computeStyle();
+
+    // Merge Computed Text Style with Prop Style
+    const mergedStyle: TextStyle = {
+      ...computed,
+      ...style,
+    };
+
+    // Handle Container Margin (e.g. mt-4)
+    const mt =
+      typeof computed.margin === "number"
+        ? computed.margin
+        : computed.margin?.top;
+    if (mt) {
+      pdf.moveCursor(0, mt);
+    }
+
     pdf.queueOperation(() => {
       items.forEach((item, idx) => {
         const marker = ordered ? `${idx + 1}.` : "•";
-        const fontSize = style?.fontSize ?? pdf.baseFont.size;
+        const fontSize = mergedStyle.fontSize ?? pdf.baseFont.size;
 
         // Check if we have space for at least one line of text
         // This prevents the marker from being drawn on the current page
@@ -51,7 +81,7 @@ export const PdfList: React.FC<PdfListProps> = ({
           marker,
           startX + indent,
           textY,
-          style,
+          mergedStyle,
           markerWidth,
           "right"
         );
@@ -63,15 +93,34 @@ export const PdfList: React.FC<PdfListProps> = ({
         // Calculate width available
         const maxWidth = pdf.contentRight - contentX;
 
-        pdf.paragraph(item, style, maxWidth);
+        pdf.paragraph(item, mergedStyle, maxWidth);
 
         // Reset X, keep Y (paragraph moved it)
         const endY = pdf.getCursor().y;
         pdf.setCursor(startX, endY + spacing);
       });
+
+      // Handle Container Margin Bottom
+      const mb =
+        typeof computed.margin === "number"
+          ? computed.margin
+          : computed.margin?.bottom;
+      if (mb) {
+        pdf.moveCursor(0, mb);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, items, ordered, style, indent, markerWidth, spacing]);
+  }, [pdf, items, ordered, style, indent, markerWidth, spacing, className]);
 
-  return null;
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        position: "absolute",
+        visibility: "hidden",
+        pointerEvents: "none",
+      }}
+    />
+  );
 };

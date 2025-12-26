@@ -1,5 +1,6 @@
 import React from "react";
 import type { TextStyle } from "../core/types";
+import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
 
 export interface PdfTextProps extends TextStyle {
@@ -8,6 +9,8 @@ export interface PdfTextProps extends TextStyle {
   y?: number;
   maxWidth?: number;
   spacingBelow?: number;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export const PdfText: React.FC<PdfTextProps> = ({
@@ -16,20 +19,32 @@ export const PdfText: React.FC<PdfTextProps> = ({
   y,
   maxWidth,
   spacingBelow = 2,
-  ...style
+  className,
+  style: styleProp,
+  ...textStyle
 }) => {
   const pdf = usePdf();
+  const { ref, computeStyle } = useClassStyles(className, styleProp);
 
   React.useLayoutEffect(() => {
+    // Extract styles synchronously after render
+    const resolved = computeStyle();
+
+    // Merge Strategy: Explicit Props > CSS Class > Defaults
+    const finalStyle = {
+      ...resolved,
+      ...textStyle,
+    } as TextStyle;
+
     pdf.queueOperation(() => {
       const startPos = pdf.getCursor();
       let h = 0;
       const draw = () => {
         if (typeof x === "number" && typeof y === "number") {
-          pdf.textRaw(children, x, y, style, maxWidth, style.align);
+          pdf.textRaw(children, x, y, finalStyle, maxWidth, finalStyle.align);
         } else {
           pdf.setCursor(startPos.x, startPos.y);
-          h = pdf.paragraph(children, style, maxWidth);
+          h = pdf.paragraph(children, finalStyle, maxWidth);
           const cur = pdf.getCursor();
           pdf.setCursor(cur.x, cur.y + spacingBelow);
         }
@@ -37,10 +52,10 @@ export const PdfText: React.FC<PdfTextProps> = ({
 
       draw();
 
-      if (style.showInAllPages) {
+      if (finalStyle.showInAllPages) {
         pdf.registerRecurringItem({
           draw,
-          scope: style.scope ?? "all",
+          scope: finalStyle.scope ?? "all",
           y: startPos.y,
           height: h + spacingBelow,
         });
@@ -54,9 +69,22 @@ export const PdfText: React.FC<PdfTextProps> = ({
     y,
     maxWidth,
     spacingBelow,
-    style.fontSize,
-    style.align,
-  ]); // Add dependencies as needed
+    className,
+    textStyle.fontSize,
+    textStyle.color,
+    textStyle.align,
+  ]);
 
-  return null;
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        ...styleProp,
+        position: "absolute",
+        visibility: "hidden",
+        pointerEvents: "none",
+      }}
+    />
+  );
 };

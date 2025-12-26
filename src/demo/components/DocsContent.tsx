@@ -287,6 +287,32 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
+      <h3>Styling with CSS Classes</h3>
+      <p>
+        You can now use standard CSS classes (including generic CSS or utility
+        frameworks like Tailwind CSS) using the <code>className</code> prop.
+      </p>
+      <div className="alert alert-info">
+        <strong>Note:</strong> Standard CSS properties like <code>color</code>,{" "}
+        <code>font-size</code>, <code>border</code>, <code>padding</code>, and{" "}
+        <code>margin</code> are automatically converted to PDF styles. Complex
+        layout properties (flex, grid) are not supported.
+      </div>
+      <CodeBlock
+        code={`// Example with Tailwind CSS classes
+<PdfText className="text-red-600 font-bold text-xl mb-4">
+  Styled with Tailwind!
+</PdfText>
+
+<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded">
+  <PdfText className="text-gray-800">
+    This box has padding, border, and background color defined via classes.
+  </PdfText>
+</PdfView>`}
+      />
+
+      <div className="hr"></div>
+
       <h3>Global Document Props</h3>
       <p>
         Props passed to <code>&lt;PdfDocument&gt;</code>.

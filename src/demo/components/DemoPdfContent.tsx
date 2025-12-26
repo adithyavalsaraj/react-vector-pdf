@@ -33,8 +33,18 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
 
     switch (item.type) {
       case "text":
+        // Example: Add a utility class to text items for demonstration if they don't have one
+        // Ideally we should let the user pick classes in the UI, but for now we hardcode a test
+        // or map existing props to classes.
+        // Let's map strict colors to classes if possible, or just pass generic class.
         return (
-          <PdfText key={item.id} {...item.props} {...common}>
+          <PdfText
+            key={item.id}
+            {...item.props}
+            {...common}
+            // Demo: apply 'mb-2' (margin-bottom 2mm approx) via class
+            className="mb-2"
+          >
             {item.props.children}
           </PdfText>
         );
@@ -46,11 +56,22 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
             sizing={imgSizing}
             {...item.props}
             {...common}
+            className="mb-4"
           />
         );
       case "list":
-        return <PdfList key={item.id} {...item.props} {...common} />;
+        return (
+          <PdfList key={item.id} {...item.props} className="mb-4" {...common} />
+        );
       case "table":
+        // Map header color to class if it matches our utilities
+        let headerClass = "";
+        let headerStyle = { ...item.props.headerStyle, fontStyle: "bold" };
+
+        if (tableHeaderColor === "#f3f4f6") headerClass = "bg-gray-50";
+        else if (tableHeaderColor === "#eff6ff") headerClass = "bg-blue-50";
+        else headerStyle.fillColor = tableHeaderColor;
+
         return (
           <PdfTable
             key={item.id}
@@ -58,7 +79,11 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
             borderWidth={
               tableBorderWidth ? Number(tableBorderWidth) : undefined
             }
-            headerStyle={{ fillColor: tableHeaderColor, fontStyle: "bold" }}
+            // We can pass headerStyle WITH className.
+            // If className sets bg, it overrides defaults.
+            // Explicit style supercedes class.
+            headerStyle={headerStyle}
+            className={`mb-4 w-full ${headerClass}`}
             {...item.props}
             {...common}
           />

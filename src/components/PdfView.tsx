@@ -1,18 +1,20 @@
 import React from "react";
 import type { ViewStyle } from "../core/types";
+import { useClassStyles } from "../core/useClassStyles";
 import { resolvePadding } from "../core/utils";
 import { usePdf } from "./PdfProvider";
 import { PdfViewFinisher } from "./internal/PdfViewFinisher";
 import { PdfViewInit } from "./internal/PdfViewInit";
 
 export interface PdfViewProps {
-  style?: ViewStyle;
+  style?: ViewStyle | React.CSSProperties; // Allow both
   children?: React.ReactNode;
   debug?: boolean;
   x?: number;
   y?: number;
   w?: number;
   h?: number;
+  className?: string;
 }
 
 // Reuse logic for resolving margin similar to padding
@@ -32,6 +34,8 @@ function resolveMargin(
 
 export const PdfView: React.FC<PdfViewProps> = ({
   style = {},
+  className,
+  style: styleProp,
   children,
   x,
   y,
@@ -39,20 +43,45 @@ export const PdfView: React.FC<PdfViewProps> = ({
   h,
 }) => {
   const pdf = usePdf();
-  const basePad = resolvePadding(style.padding);
+
+  // useClassStyles computes the style from className and styleProp.
+  const { ref, computeStyle } = useClassStyles(
+    className,
+    styleProp as React.CSSProperties
+  );
+
+  // Maintain merged style state to handle re-renders when styles are computed
+  const [mergedStyle, setMergedStyle] = React.useState<ViewStyle>(
+    style as ViewStyle
+  );
+
+  React.useLayoutEffect(() => {
+    const computed = computeStyle();
+
+    // Merge: style prop > computed class > defaults
+    const newStyle = { ...computed, ...style } as ViewStyle;
+
+    // Update state if style has changed (avoid loops)
+    if (JSON.stringify(newStyle) !== JSON.stringify(mergedStyle)) {
+      setMergedStyle(newStyle);
+    }
+  });
+
+  // Need to handle padding/margin resolution for helper variables
+  const basePad = resolvePadding(mergedStyle.padding);
   const pad = {
-    top: style.paddingTop ?? basePad.top,
-    right: style.paddingRight ?? basePad.right,
-    bottom: style.paddingBottom ?? basePad.bottom,
-    left: style.paddingLeft ?? basePad.left,
+    top: mergedStyle.paddingTop ?? basePad.top,
+    right: mergedStyle.paddingRight ?? basePad.right,
+    bottom: mergedStyle.paddingBottom ?? basePad.bottom,
+    left: mergedStyle.paddingLeft ?? basePad.left,
   };
 
-  const baseMargin = resolveMargin(style.margin);
+  const baseMargin = resolveMargin(mergedStyle.margin);
   const margin = {
-    top: style.marginTop ?? baseMargin.top,
-    right: style.marginRight ?? baseMargin.right,
-    bottom: style.marginBottom ?? baseMargin.bottom,
-    left: style.marginLeft ?? baseMargin.left,
+    top: mergedStyle.marginTop ?? baseMargin.top,
+    right: mergedStyle.marginRight ?? baseMargin.right,
+    bottom: mergedStyle.marginBottom ?? baseMargin.bottom,
+    left: mergedStyle.marginLeft ?? baseMargin.left,
   };
 
   const viewState = React.useRef<{
@@ -61,12 +90,23 @@ export const PdfView: React.FC<PdfViewProps> = ({
     radius?: number;
   }>({}).current;
 
-  viewState.radius = style.radius;
+  viewState.radius = mergedStyle.radius;
 
   return (
     <React.Fragment>
+      <div
+        ref={ref}
+        className={className}
+        style={{
+          ...(styleProp as React.CSSProperties),
+          position: "absolute",
+          visibility: "hidden",
+          pointerEvents: "none",
+        }}
+      />
+
       <PdfViewInit
-        style={style}
+        style={mergedStyle}
         x={x}
         y={y}
         w={w}
@@ -76,7 +116,7 @@ export const PdfView: React.FC<PdfViewProps> = ({
       {children}
       <PdfViewFinisher
         viewState={viewState}
-        style={style}
+        style={mergedStyle}
         pad={pad}
         margin={margin}
         w={w}

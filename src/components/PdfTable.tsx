@@ -1,11 +1,12 @@
 import React from "react";
 import { BoxStyle, TextStyle } from "../core/types";
+import { useClassStyles } from "../core/useClassStyles";
 import { resolvePadding } from "../core/utils";
 import { usePdf } from "./PdfProvider";
 
 export interface TableColumn {
   header?: string;
-  accessor?: string | ((row: any) => React.ReactNode); // simple text or custom? For now string.
+  accessor?: string | ((row: any) => React.ReactNode);
   width?: number | string; // e.g. 20 or "20%" or "auto"
   align?: "left" | "center" | "right";
   id?: string; // unique id if accessor is function
@@ -33,31 +34,71 @@ export interface PdfTableProps {
   headerHeight?: number; // min height
   repeatHeader?: boolean;
   striped?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export const PdfTable: React.FC<PdfTableProps> = ({
   data,
   columns,
-  width = "100%",
-  borderWidth = 0.1,
-  borderColor = "#000000",
-  cellPadding = 2,
+  width: propWidth = "100%",
+  borderWidth: propBorderWidth = 0.1,
+  borderColor: propBorderColor = "#000000",
+  cellPadding: propCellPadding = 2,
   headerStyle,
   rowStyle,
   alternateRowStyle,
   headerHeight,
   repeatHeader = true,
   striped = false,
+  className,
+  style,
 }) => {
   const pdf = usePdf();
+  const { ref, computeStyle } = useClassStyles(className, style);
 
   React.useLayoutEffect(() => {
+    const computed = computeStyle();
+
+    // Resolve Table Level Styles
+    const width =
+      propWidth === "100%" && computed.width ? computed.width : propWidth;
+
+    const borderColor = computed.borderColor ?? propBorderColor;
+    const borderWidth = computed.borderWidth ?? propBorderWidth;
+    const cellPadding = computed.padding ?? propCellPadding;
+
+    // Text Styles merging
+    const computedTextStyle: TextStyle & BoxStyle = {
+      color: computed.color,
+      fontSize: computed.fontSize,
+      fontStyle: computed.fontStyle,
+      align: computed.align,
+      fillColor: computed.fillColor,
+    };
+
+    const mergedRowStyle = { ...computedTextStyle, ...rowStyle };
+    // Header style usually overrides basic style
+    const mergedHeaderStyle = { ...computedTextStyle, ...headerStyle };
+    if (!headerStyle?.fontStyle) {
+      mergedHeaderStyle.fontStyle = headerStyle?.fontStyle ?? "bold";
+    }
+
+    // Margin handling
+    const mt =
+      typeof computed.margin === "number"
+        ? computed.margin
+        : computed.margin?.top;
+    if (mt) {
+      pdf.moveCursor(0, mt);
+    }
+
     pdf.queueOperation(() => {
       // 1. Calculate available width
       const totalWidth =
         typeof width === "number"
           ? width
-          : (parseFloat(width) / 100) * pdf.contentAreaWidth;
+          : (parseFloat(width as string) / 100) * pdf.contentAreaWidth;
 
       // 2. Resolve column widths
       // Simple algorithm: Fixed widths take space, rest distributed among "auto" or "%"
@@ -65,7 +106,6 @@ export const PdfTable: React.FC<PdfTableProps> = ({
 
       const colWidths: number[] = columns.map((col) => {
         if (typeof col.width === "number") return col.width;
-        // treat string as % for now, or simplistic approach
         if (typeof col.width === "string" && col.width.endsWith("%")) {
           return (parseFloat(col.width) / 100) * totalWidth;
         }
@@ -122,11 +162,6 @@ export const PdfTable: React.FC<PdfTableProps> = ({
           0.3528;
 
         // Vertical alignment calculation
-        // Fix: Use simpler baseline calculation.
-        // We draw from top of cell. textY is the baseline of the first line.
-        // Approx baseline for top-aligned text is y + padding + fontSize (ascender).
-
-        // Vertical alignment calculation
         const fontSizeMm = (style.fontSize ?? pdf.baseFont.size) * 0.3528;
 
         // Calculate total text block height
@@ -173,10 +208,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       const startX = pdf.getCursor().x;
 
       // Calculate Header Height
-      // For now assume fixed or single line?
-      // User asked for "expand cell based on content".
-      // We need to measure logic.
-      const hH = headerHeight ?? 10; // TODO: measure
+      const hH = headerHeight ?? 10;
 
       // Check page break for header
       if (y + hH > pdf.contentBottom) {
@@ -193,7 +225,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
           y,
           w,
           hH,
-          headerStyle ?? { fontStyle: "bold" },
+          mergedHeaderStyle,
           col.align ?? "left"
         );
         x += w;
@@ -249,13 +281,13 @@ export const PdfTable: React.FC<PdfTableProps> = ({
                 ? col.accessor(row)
                 : row[col.accessor as string];
             let content = "";
-            let style = rowStyle;
+            let style = mergedRowStyle;
             let cSpan = 1;
             let rSpan = 1;
 
             if (val && typeof val === "object" && val.content !== undefined) {
               content = String(val.content);
-              if (val.style) style = val.style;
+              if (val.style) style = { ...style, ...val.style };
               if (val.colSpan) cSpan = val.colSpan;
               if (val.rowSpan) rSpan = val.rowSpan;
             } else {
@@ -325,8 +357,6 @@ export const PdfTable: React.FC<PdfTableProps> = ({
           // Pre-calculate max vertical reach for this row to check page break
           let maxReach = rowH;
           for (let ci = 0; ci < columns.length; ci++) {
-            // Accessor logic duplicated to find rowSpan
-            // We can optimizations later, but for now cleanliness:
             const col = columns[ci];
             const val =
               typeof col.accessor === "function"
@@ -365,7 +395,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
                   currentY,
                   w,
                   headerHeight ?? 10,
-                  headerStyle ?? { fontStyle: "bold" },
+                  mergedHeaderStyle,
                   col.align ?? "left"
                 );
                 hx += w;
@@ -392,7 +422,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
 
             // Determine Row Style
             // Priority: cell style > alternateRowStyle > striped default > rowStyle
-            let cStyle = rowStyle;
+            let cStyle = mergedRowStyle;
             const isAlt = ri % 2 === 1;
 
             if (isAlt) {
@@ -400,7 +430,7 @@ export const PdfTable: React.FC<PdfTableProps> = ({
                 cStyle = alternateRowStyle;
               } else if (striped) {
                 // Use a darker gray for visibility #E5E7EB
-                cStyle = { ...rowStyle, fillColor: "#E5E7EB" };
+                cStyle = { ...mergedRowStyle, fillColor: "#E5E7EB" };
               }
             }
             let content = "";
@@ -457,9 +487,29 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       };
 
       renderRows();
+
+      // Handle Container Margin Bottom
+      const mb =
+        typeof computed.margin === "number"
+          ? computed.margin
+          : computed.margin?.bottom;
+      if (mb) {
+        pdf.moveCursor(0, mb);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, data, columns, width]); // simplified deps
+  }, [pdf, data, columns, propWidth, className]);
 
-  return null;
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        ...style,
+        position: "absolute",
+        visibility: "hidden",
+        pointerEvents: "none",
+      }}
+    />
+  );
 };

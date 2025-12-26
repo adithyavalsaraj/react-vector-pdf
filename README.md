@@ -95,6 +95,25 @@ import { PdfPreview, PdfText } from "react-vector-pdf";
 
 **Note:** Changing props (like options, colors, fonts) will automatically regenerate and update the preview.
 
+## Styling with CSS Classes
+
+You can use standard CSS classes (including generic CSS or utility frameworks like **Tailwind CSS**) to style PDF components using the `className` prop. The library extracts valid styles (colors, fonts, borders, padding, margin) from the class and applies them to the PDF vector output.
+
+```tsx
+// Using Tailwind CSS classes
+<PdfText className="text-red-600 font-bold text-xl mb-4">
+  Styled with Tailwind!
+</PdfText>
+
+<PdfView className="border border-gray-300 p-4 bg-gray-50 rounded">
+  <PdfText className="text-gray-800">
+    This box uses utility classes for padding, border, and background.
+  </PdfText>
+</PdfView>
+```
+
+> **Note**: Properties like `display: flex` or `grid` are **not supported** as PDF layout is strictly standard flow or absolute positioning. Only box-model properties (padding/margin/border) and typography/color styles are mapped.
+
 ## Components
 
 ### 1. `PdfDocument`

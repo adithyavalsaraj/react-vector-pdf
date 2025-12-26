@@ -644,3 +644,64 @@ ul.list-disc {
   grid-column: 1 / -1 !important;
 }
 
+// Utility classes for PDF Demo (mimicking Tailwind for testing)
+.text-red-600 {
+  color: #dc2626;
+}
+.text-blue-600 {
+  color: #2563eb;
+}
+.text-gray-800 {
+  color: #1f2937;
+}
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+.font-italic {
+  font-style: italic;
+}
+.text-xl {
+  font-size: 20px;
+}
+.text-lg {
+  font-size: 18px;
+}
+.text-sm {
+  font-size: 14px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+.mb-2 {
+  margin-bottom: 8px;
+}
+.mt-4 {
+  margin-top: 16px;
+}
+.p-4 {
+  padding: 16px;
+}
+.p-2 {
+  padding: 8px;
+}
+
+.border {
+  border: 1px solid #e5e7eb;
+}
+.border-gray-300 {
+  border-color: #d1d5db;
+}
+.rounded {
+  border-radius: 4px;
+}
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+.bg-blue-50 {
+  background-color: #eff6ff;
+}

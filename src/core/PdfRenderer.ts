@@ -76,11 +76,6 @@ export class PdfRenderer {
     this.applyBaseFont();
   }
 
-  // ... getters ...
-
-  // (Keeping getters omitted for brevity in replace block if possible, but replace_file_content needs context)
-  // I will target the variable declaration area specifically.
-
   // Implementation of Stack Methods
   startRecording() {
     this.recordingStack.push([]);
@@ -574,8 +569,6 @@ export class PdfRenderer {
       }
 
       // Draw text
-      // Original logic used: y = cursorY + idx*lineHeight + fontSizeMm
-      // So relative to current cursorY (top of line box), textY is at +fontSizeMm (approx)
       const textY = this.cursorY + fontSize * 0.3528;
 
       let textX = this.cursorX;

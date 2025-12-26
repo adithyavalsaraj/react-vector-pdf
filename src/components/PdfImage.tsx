@@ -1,4 +1,5 @@
 import React from "react";
+import { useClassStyles } from "../core/useClassStyles";
 import { usePdf } from "./PdfProvider";
 
 export interface PdfImageProps {
@@ -16,12 +17,29 @@ export interface PdfImageProps {
   scope?: "all" | "first-only" | "except-first" | number[];
 }
 
+export interface PdfImageProps {
+  src: string;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  mime?: "PNG" | "JPEG";
+  flow?: boolean;
+  layout?: "fixed" | "flow";
+  sizing?: "fit" | "fill" | "auto";
+  align?: "left" | "center" | "right";
+  showInAllPages?: boolean;
+  scope?: "all" | "first-only" | "except-first" | number[];
+  className?: string;
+  style?: React.CSSProperties;
+}
+
 export const PdfImage: React.FC<PdfImageProps> = ({
   src,
   x,
   y,
   w: propW,
-  h,
+  h: propH,
   mime = "PNG",
   flow,
   layout,
@@ -29,11 +47,28 @@ export const PdfImage: React.FC<PdfImageProps> = ({
   align = "left",
   showInAllPages,
   scope,
+  className,
+  style,
 }) => {
   const pdf = usePdf();
+  const { ref, computeStyle } = useClassStyles(className, style);
 
   React.useLayoutEffect(() => {
-    // Determine if we are in absolute or flow mode
+    const computed = computeStyle();
+
+    // Merge props: Props take precedence over computed styles
+    // Note: computed.width is in mm (if parsed correctly from px)
+    const effectiveW =
+      propW ??
+      (typeof computed.width === "number" ? computed.width : undefined);
+    const effectiveH =
+      propH ??
+      (typeof computed.height === "number" ? computed.height : undefined);
+
+    // Margins logic: Default to 2mm if no margin
+    const m = computed.margin;
+    const marginBottom = (typeof m === "number" ? m : m?.bottom) ?? 2;
+
     // Determine if we are in absolute or flow mode
     const isFlow =
       layout === "flow" ||
@@ -41,12 +76,10 @@ export const PdfImage: React.FC<PdfImageProps> = ({
       (x === undefined && y === undefined && layout !== "fixed");
 
     // Sizing logic
-    let renderW = propW;
+    let renderW = effectiveW;
     if (sizing === "fill") {
       renderW = pdf.contentAreaWidth;
-    } else if (sizing === "fit" && !propW) {
-      // fit behavior (default) limit to content width if larger?
-      // For now, if auto, we leave undefined. if fill, we force contentWidth.
+    } else if (sizing === "fit" && !effectiveW) {
     }
 
     // Pass undefined coordinates to renderer if they are missing
@@ -65,7 +98,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
           x: drawX,
           y: drawY,
           w: renderW,
-          h,
+          h: effectiveH,
           mime,
           align,
         });
@@ -76,7 +109,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
 
       if (isFlow && res) {
         // Move cursor down
-        pdf.moveCursor(0, res.height + 2); // default spacing
+        pdf.moveCursor(0, res.height + marginBottom);
       }
 
       if (showInAllPages && res) {
@@ -93,7 +126,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
                 x: renderX,
                 y: isFlow ? startPos.y : renderY,
                 w: renderW,
-                h,
+                h: effectiveH,
                 mime,
                 align,
               });
@@ -101,7 +134,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
           },
           scope: scope ?? "all",
           y: isFlow ? startPos.y : renderY ?? 0,
-          height: res.height + 2,
+          height: res.height + marginBottom,
         });
       }
     });
@@ -113,7 +146,7 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     x,
     y,
     propW,
-    h,
+    propH,
     mime,
     flow,
     layout,
@@ -121,6 +154,19 @@ export const PdfImage: React.FC<PdfImageProps> = ({
     align,
     showInAllPages,
     scope,
+    className,
   ]);
-  return null;
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        ...style,
+        position: "absolute",
+        visibility: "hidden",
+        pointerEvents: "none",
+      }}
+    />
+  );
 };
