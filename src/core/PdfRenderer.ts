@@ -115,7 +115,43 @@ export class PdfRenderer {
     return this.pageWidth - this.margin.right;
   }
   get contentTop() {
-    return this.margin.top;
+    return this.margin.top + this.currentVerticalPadding.top;
+  }
+
+  get contentBottom() {
+    return (
+      this.pageHeight - this.margin.bottom - this.currentVerticalPadding.bottom
+    );
+  }
+
+  private indentStack: { left: number; right: number }[] = [];
+  private currentIndent = { left: 0, right: 0 };
+
+  pushIndent(left: number, right: number) {
+    this.indentStack.push({ ...this.currentIndent });
+    this.currentIndent.left += left;
+    this.currentIndent.right += right;
+
+    this.cursorX += left;
+    this.contentWidth =
+      this.pageWidth -
+      this.margin.left -
+      this.margin.right -
+      this.currentIndent.left -
+      this.currentIndent.right;
+  }
+
+  popIndent() {
+    const prev = this.indentStack.pop();
+    if (prev) {
+      this.currentIndent = prev;
+      this.contentWidth =
+        this.pageWidth -
+        this.margin.left -
+        this.margin.right -
+        this.currentIndent.left -
+        this.currentIndent.right;
+    }
   }
 
   /**
@@ -142,9 +178,6 @@ export class PdfRenderer {
     }
     return top;
   }
-  get contentBottom() {
-    return this.pageHeight - this.margin.bottom - this.reservedBottomHeight;
-  }
   get contentHeight() {
     return this.contentBottom - this.contentTop;
   }
@@ -158,56 +191,43 @@ export class PdfRenderer {
     return this.defaultLineHeight;
   }
 
-  setReservedHeight(h: number) {
-    this.reservedBottomHeight = h;
+  private verticalPaddingStack: { top: number; bottom: number }[] = [];
+
+  pushVerticalPadding(top: number, bottom: number) {
+    this.verticalPaddingStack.push({ top, bottom });
+    // Apply visual space for the current page
+    this.cursorY += top;
   }
 
-  private indentStack: { left: number; right: number }[] = [];
-  private currentIndent = { left: 0, right: 0 };
-
-  pushIndent(left: number, right: number) {
-    this.indentStack.push({ ...this.currentIndent });
-    this.currentIndent.left += left;
-    this.currentIndent.right += right;
-
-    // Update cursor and content width immediately
-    // Note: We don't move cursor Y, only X and constraints
-    this.cursorX += left;
-    this.contentWidth =
-      this.pageWidth -
-      this.margin.left -
-      this.margin.right -
-      this.currentIndent.left -
-      this.currentIndent.right;
-  }
-
-  popIndent() {
-    const prev = this.indentStack.pop();
-    if (prev) {
-      const diffLeft = this.currentIndent.left - prev.left;
-      this.currentIndent = prev;
-
-      // Restore cursor X (reverse the shift) if possible, or just re-calc
-      // We assume flow layout, so just shifting back is reasonable?
-      // Actually, if we are in a new line, we should reset to margin + indent.
-      // If we are mid-line... it's tricky. But usually pop happens at block end.
-
-      this.contentWidth =
-        this.pageWidth -
-        this.margin.left -
-        this.margin.right -
-        this.currentIndent.left -
-        this.currentIndent.right;
-
-      // We don't forcefully reset cursorX since we might be finishing a block,
-      // but typically we should align with new bounds.
-      // For now let's just update bounds.
+  popVerticalPadding() {
+    const pad = this.verticalPaddingStack.pop();
+    if (pad) {
+      // Apply visual space for the end of the block
+      this.cursorY += pad.bottom;
     }
   }
 
+  get currentVerticalPadding() {
+    let t = 0;
+    let b = 0;
+    for (const p of this.verticalPaddingStack) {
+      t += p.top;
+      b += p.bottom;
+    }
+    return { top: t, bottom: b };
+  }
+
+  // Legacy support or override if needed, but we prefer stack
+  setReservedHeight(h: number) {
+    // Deprecated: Logic moved to vertical padding stack.
+  }
+
+  // ...
+
   resetFlowCursor() {
     this.cursorX = this.margin.left + this.currentIndent.left;
-    this.cursorY = this.margin.top;
+    // Start at margin.top + any accumulated top padding from containers
+    this.cursorY = this.margin.top + this.currentVerticalPadding.top;
     this.contentWidth =
       this.pageWidth -
       this.margin.left -
@@ -228,7 +248,7 @@ export class PdfRenderer {
 
     this.cursorX = 0;
     this.cursorY = 0;
-    this.reservedBottomHeight = 0;
+    this.verticalPaddingStack = [];
     this.pendingTasks = new Set();
     this.opQueue = Promise.resolve();
     this.indentStack = [];
@@ -354,12 +374,12 @@ export class PdfRenderer {
         if (color) {
           this.pdf.setTextColor(color[0], color[1], color[2]);
           if (color[3] !== undefined) {
-            // @ts-ignore
+            // @ts-ignore: jsPDF GState type definition missing
             this.pdf.setGState(
               new (this.pdf as any).GState({ opacity: color[3] })
             );
           } else {
-            // @ts-ignore
+            // @ts-ignore: jsPDF GState type definition missing
             this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
           }
         }
@@ -394,7 +414,7 @@ export class PdfRenderer {
           const fillRgb = hexToRgb(s.fillColor);
           if (fillRgb) {
             if (fillRgb[3] !== undefined) {
-              // @ts-ignore
+              // @ts-ignore: jsPDF GState type definition missing
               this.pdf.setGState(
                 new (this.pdf as any).GState({ opacity: fillRgb[3] })
               );
@@ -410,7 +430,7 @@ export class PdfRenderer {
             const strokeRgb = hexToRgb(s.borderColor);
             if (strokeRgb) {
               if (strokeRgb[3] !== undefined) {
-                // @ts-ignore
+                // @ts-ignore: jsPDF GState type definition missing
                 this.pdf.setGState(
                   new (this.pdf as any).GState({ opacity: strokeRgb[3] })
                 );
@@ -436,7 +456,7 @@ export class PdfRenderer {
         // Reset defaults
         this.pdf.setLineWidth(0.2);
         this.pdf.setDrawColor(0, 0, 0);
-        // @ts-ignore
+        // @ts-ignore: jsPDF GState type definition missing
         this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
       }
     });
@@ -457,6 +477,7 @@ export class PdfRenderer {
       h?: number;
       mime?: "PNG" | "JPEG";
       align?: "left" | "center" | "right";
+      radius?: number;
     } = {}
   ) {
     const task = (async () => {
@@ -491,10 +512,6 @@ export class PdfRenderer {
           if (drawY + drawH > this.contentBottom) {
             this.addPage();
             drawY = this.cursorY;
-            // Re-evaluate drawX if it depends on having been carried over?
-            // Actually drawX logic below depends on opts.x or alignment.
-            // If opts.x was undefined, we used default alignment.
-            // We should re-run the drawX logic since we might have reset context (though alignment is static)
           }
         }
 
@@ -509,6 +526,39 @@ export class PdfRenderer {
           }
         }
 
+        // Apply Clipping if radius provided
+        if (opts.radius && opts.radius > 0) {
+          const r = opts.radius;
+          const x = drawX!;
+          const y = drawY;
+          const w = drawW;
+          const h = drawH;
+          const k = 0.551784; // Kappa for bezier approximation
+          const kr = r * k;
+
+          this.pdf.saveGraphicsState();
+
+          // Path construction (Top-Left clockwise)
+          this.pdf.moveTo(x + r, y);
+          this.pdf.lineTo(x + w - r, y);
+          this.pdf.curveTo(x + w - r + kr, y, x + w, y + r - kr, x + w, y + r);
+          this.pdf.lineTo(x + w, y + h - r);
+          this.pdf.curveTo(
+            x + w,
+            y + h - r + kr,
+            x + w - r + kr,
+            y + h,
+            x + w - r,
+            y + h
+          );
+          this.pdf.lineTo(x + r, y + h);
+          this.pdf.curveTo(x + r - kr, y + h, x, y + h - r + kr, x, y + h - r);
+          this.pdf.lineTo(x, y + r);
+          this.pdf.curveTo(x, y + r - kr, x + r - kr, y, x + r, y);
+
+          this.pdf.clip();
+        }
+
         this.pdf.addImage(
           dataUrl,
           opts.mime ?? "PNG",
@@ -517,6 +567,11 @@ export class PdfRenderer {
           drawW,
           drawH
         );
+
+        if (opts.radius && opts.radius > 0) {
+          this.pdf.restoreGraphicsState();
+        }
+
         return { width: drawW, height: drawH, x: drawX, y: drawY };
       } catch (e) {
         console.error("Failed to load image", url, e);
@@ -628,7 +683,6 @@ export class PdfRenderer {
     });
 
     // Add small spacing after block
-    // this.cursorY += 1; // Removed as per user request to avoid extra space
     this.applyBaseFont();
     return totalHeight;
   }
@@ -731,7 +785,7 @@ export class PdfRenderer {
     pageNum: number,
     rect: { x: number; y: number; w: number; h: number },
     color: string,
-    radius?: number
+    radius?: number | { tl?: number; tr?: number; br?: number; bl?: number }
   ) {
     // @ts-ignore
     const pages = this.pdf.internal.pages;
@@ -751,10 +805,6 @@ export class PdfRenderer {
     const pageHeight = this.pdf.internal.pageSize.getHeight();
 
     // Convert coordinates to PDF points (Bottom-Up Y axis)
-    // x = x * k
-    // y = (pageHeight - (y + h)) * k (flip y)
-    // w = w * k
-    // h = h * k
     const x = rect.x * k;
     const h = rect.h * k;
     const w = rect.w * k;
@@ -772,105 +822,100 @@ export class PdfRenderer {
       ).toFixed(3)} rg`
     );
 
+    let hasRadius = false;
+    let tl = 0,
+      tr = 0,
+      br = 0,
+      bl = 0;
+
+    if (typeof radius === "number" && radius > 0) {
+      hasRadius = true;
+      tl = tr = br = bl = radius * k;
+    } else if (typeof radius === "object") {
+      if (radius.tl || radius.tr || radius.br || radius.bl) {
+        hasRadius = true;
+        tl = (radius.tl ?? 0) * k;
+        tr = (radius.tr ?? 0) * k;
+        br = (radius.br ?? 0) * k;
+        bl = (radius.bl ?? 0) * k;
+      }
+    }
+
     // Draw Rectangle (re) and Fill (f)
-    if (radius && radius > 0) {
-      // approximate rounded rect with lines/curves if we want to be raw,
-      // OR rely on 're' not being enough?
-      // raw streams don't have 'roundedRect' primitive easily in older specs,
-      // but jsPDF uses curves (c/v/y).
-      // Since we are injecting raw PDF stream ops, we must output PDF Drawing Commands.
-      // A simple 're' (x y w h re) is rectangle.
-      // Rounded needs moves (m) and curves (c).
-      // For simplicity/reliability/safety, if we can't easily emulate curves in raw stream
-      // generally developers avoid raw injection for complex shapes.
-      // HOWEVER, we can just assume 're' is square.
-      // If the user REALLY wants fixed background for rounded component behind content...
-      // We can try to manually construct the path.
-
-      // Actually, let's use a simpler hack:
-      // If we want rounded, we might have to accept that 'injectFill' is primitive.
-      // But wait, allow me to try generating the ops via a dummy context or just standard curve approximation.
-      // Or... standard solution: Just draw a rectangle.
-      // User complained "appearing out of border".
-
-      // Let's implement basic corner clipping if possible.
-      // It's quite complex to implement raw bezier curves here without a library.
-      // BUT, we can just use the 're' operator (rectangle).
-      // If I can't easily do rounded, I will just do rect.
-      // Oh, wait, I can just use the same logic as 'box' but prepend?
-      // No, 'box' calls `this.pdf.roundedRect`. `roundedRect` writes to the current page stream.
-      // `injectFill` writes to the START of the stream.
-
-      // Alternative: Don't use `injectFill`. Use `pdf.roundedRect` normally, but
-      // ensure it is drawn BEFORE children?
-      // In `PdfView`, we draw children, THEN we draw border.
-      // If we draw background *after* processing children (to know height),
-      // it overlays the children text if the background is opaque?
-      // No, standard PDF painting model: 'f' fills. 'S' strokes.
-      // Objects drawn later cover earlier ones.
-      // If we draw BG later, it covers text.
-      // That's why `injectFill` exists: to put it at the start.
-
-      // To support rounded rect in `injectFill`, I need the raw PDF operators for a rounded rect.
-      // I will use a simple implementation of "m ... l ... c ..."
-      // For strictness, let's keep it simple.
-      // Corner radius r.
-      // x, y. w, h.
-      // K = 0.551784 (kappa for bezier circle approx)
-
-      const r = radius * k; // Scale radius
+    if (hasRadius) {
       const K = 0.551784;
-      const kr = r * K;
-
-      // PDF coords: y is up.
-      // Top-Left in our system is x, y(up).
-      // Our 'y' var above is actually the PDF bottom-left y.
-      // Wait, the calc `y = (pageHeight - (rect.y + rect.h)) * k` refers to the visual bottom of the rect?
-      // Yes, PDF 're' takes x, y (bottom-left), w, h.
-      // So 'y' is the bottom edge. 'y+h' is the top edge.
-
       const left = x;
       const right = x + w;
       const bottom = y;
       const top = y + h;
 
-      ops.push(`${(left + r).toFixed(2)} ${top.toFixed(2)} m`); // Move to Top-Left start (after corner)
-      ops.push(`${(right - r).toFixed(2)} ${top.toFixed(2)} l`); // Line to Top-Right start
-      ops.push(
-        `${(right - r + kr).toFixed(2)} ${top.toFixed(2)} ${right.toFixed(
-          2
-        )} ${(top - r + kr).toFixed(2)} ${right.toFixed(2)} ${(top - r).toFixed(
-          2
-        )} c`
-      ); // Curve to Top-Right end
-      ops.push(`${right.toFixed(2)} ${(bottom + r).toFixed(2)} l`); // Line to Bottom-Right start
-      ops.push(
-        `${right.toFixed(2)} ${(bottom + r - kr).toFixed(2)} ${(
-          right -
-          r +
-          kr
-        ).toFixed(2)} ${bottom.toFixed(2)} ${(right - r).toFixed(
-          2
-        )} ${bottom.toFixed(2)} c`
-      ); // Curve to Bottom-Right end
-      ops.push(`${(left + r).toFixed(2)} ${bottom.toFixed(2)} l`); // Line to Bottom-Left start
-      ops.push(
-        `${(left + r - kr).toFixed(2)} ${bottom.toFixed(2)} ${left.toFixed(
-          2
-        )} ${(bottom + r - kr).toFixed(2)} ${left.toFixed(2)} ${(
-          bottom + r
-        ).toFixed(2)} c`
-      ); // Curve to Bottom-Left end
-      ops.push(`${left.toFixed(2)} ${(top - r).toFixed(2)} l`); // Line to Top-Left start
-      ops.push(
-        `${left.toFixed(2)} ${(top - r + kr).toFixed(2)} ${(
-          left +
-          r -
-          kr
-        ).toFixed(2)} ${top.toFixed(2)} ${(left + r).toFixed(2)} ${top.toFixed(
-          2
-        )} c`
-      ); // Curve to Top-Left end (Close)
+      // Path construction (Counter-Clockwise in PDF coords usually, but let's follow standard shape)
+      // Move to Top-Left start (after corner)
+      ops.push(`${(left + tl).toFixed(2)} ${top.toFixed(2)} m`);
+
+      // Top Line
+      ops.push(`${(right - tr).toFixed(2)} ${top.toFixed(2)} l`);
+
+      // Top-Right Corner
+      if (tr > 0) {
+        const kr = tr * K;
+        ops.push(
+          `${(right - tr + kr).toFixed(2)} ${top.toFixed(2)} ${right.toFixed(
+            2
+          )} ${(top - tr + kr).toFixed(2)} ${right.toFixed(2)} ${(
+            top - tr
+          ).toFixed(2)} c`
+        );
+      }
+
+      // Right Line
+      ops.push(`${right.toFixed(2)} ${(bottom + br).toFixed(2)} l`);
+
+      // Bottom-Right Corner
+      if (br > 0) {
+        const kr = br * K;
+        ops.push(
+          `${right.toFixed(2)} ${(bottom + br - kr).toFixed(2)} ${(
+            right -
+            br +
+            kr
+          ).toFixed(2)} ${bottom.toFixed(2)} ${(right - br).toFixed(
+            2
+          )} ${bottom.toFixed(2)} c`
+        );
+      }
+
+      // Bottom Line
+      ops.push(`${(left + bl).toFixed(2)} ${bottom.toFixed(2)} l`);
+
+      // Bottom-Left Corner
+      if (bl > 0) {
+        const kr = bl * K;
+        ops.push(
+          `${(left + bl - kr).toFixed(2)} ${bottom.toFixed(2)} ${left.toFixed(
+            2
+          )} ${(bottom + bl - kr).toFixed(2)} ${left.toFixed(2)} ${(
+            bottom + bl
+          ).toFixed(2)} c`
+        );
+      }
+
+      // Left Line
+      ops.push(`${left.toFixed(2)} ${(top - tl).toFixed(2)} l`);
+
+      // Top-Left Corner (Close)
+      if (tl > 0) {
+        const kr = tl * K;
+        ops.push(
+          `${left.toFixed(2)} ${(top - tl + kr).toFixed(2)} ${(
+            left +
+            tl -
+            kr
+          ).toFixed(2)} ${top.toFixed(2)} ${(left + tl).toFixed(
+            2
+          )} ${top.toFixed(2)} c`
+        );
+      }
 
       ops.push("f"); // Fill
     } else {

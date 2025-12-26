@@ -18,10 +18,8 @@ export interface PdfViewInitProps {
     isAbsolute?: boolean;
   };
 }
-// ...
-// ...
 
-// Move cursor inside for content (Padding)
+// Indent cursor for padding to ensure content respects the padded area.
 
 function resolveMargin(
   m?: number | { top?: number; right?: number; bottom?: number; left?: number }
@@ -66,7 +64,7 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
       const computed = computeStyle();
       let style = { ...computed, ...styleProp } as ViewStyle;
 
-      // Smart Defaults: matching PdfView.tsx logic but inside the queue
+      // Apply smart defaults similar to PdfView logic.
       const hasBg = !!style.fillColor;
       const hasBorder = !!style.borderColor || (style.borderWidth ?? 0) > 0;
       const styleHasPadding =
@@ -122,15 +120,14 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
           pdf.moveCursor(0, style.height);
         }
 
-        // Start Recording children rendering
+        // Note: Recording is disabled here to avoid issues with React Effect ordering.
         // pdf.startRecording(); // DISABLED due to React Effect ordering issues causing content to be excluded
 
         const start = pdf.getCursor();
         const page = pdf.getPageCount();
         viewState.start = { ...start, page };
 
-        // Move cursor inside for content (Padding)
-        // We use pushIndent to ensure this indentation persists across page breaks (e.g. implicitly added pages)
+        // Use pushIndent to persist indentation across page breaks.
         // @ts-ignore
         if (pdf.pushIndent) {
           // Apply Indentation
@@ -141,15 +138,22 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
           }
 
           // Also move Y for padding Top
-          // Note: pushIndent moves X, but Y is handled by moveCursor
-          if (pad.top > 0) pdf.moveCursor(0, pad.top);
+          // Note: pushIndent moves X. pushVerticalPadding moves Y and manages stack.
+          // @ts-ignore
+          if (pdf.pushVerticalPadding) {
+            // @ts-ignore
+            pdf.pushVerticalPadding(pad.top, pad.bottom);
+            // We do NOT call moveCursor(0, pad.top) because pushVerticalPadding does it.
+          } else {
+            // Fallback
+            if (pad.top > 0) pdf.moveCursor(0, pad.top);
+            pdf.setReservedHeight(pad.bottom);
+          }
         } else {
-          // Fallback for older renderer versions (shouldn't happen with local code)
+          // Fallback for environments traversing legacy renderer versions.
           pdf.setCursor(start.x + pad.left, start.y + pad.top);
+          pdf.setReservedHeight(pad.bottom);
         }
-
-        // Reserve space for bottom padding so content breaks to next page before overlapping footer
-        pdf.setReservedHeight(pad.bottom);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

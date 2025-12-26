@@ -3,6 +3,7 @@ import type { ViewStyle } from "../core/types";
 import { useClassStyles } from "../core/useClassStyles";
 import { PdfViewFinisher } from "./internal/PdfViewFinisher";
 import { PdfViewInit } from "./internal/PdfViewInit";
+import { usePdf } from "./PdfProvider";
 
 export interface PdfViewProps {
   style?: ViewStyle | React.CSSProperties;
@@ -122,6 +123,3 @@ const PdfSpacer: React.FC<{ height?: number }> = ({ height }) => {
 
   return null;
 };
-
-// Need to import usePdf for PdfSpacer
-import { usePdf } from "./PdfProvider";
