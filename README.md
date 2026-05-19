@@ -22,7 +22,7 @@
   - **PdfList**: Bullet and numbered lists with auto-wrapping and **orphan protection**.
   - **PdfView**: Advanced container with **perfect multi-page spanning**, support for borders, background colors, and granular **persistent padding**. Includes spacing overlays (`debug={true}`) showing margins (dotted red), paddings (solid green), and content bounds (dashed blue).
 - **Custom TTF Fonts**: Registers custom TrueType Font streams asynchronously inside the jsPDF VFS, supporting bespoke branding instantly.
-- **Server-Side Rendering (SSR) & Server Support**: Fully decoupled style calculation fallback that continues rendering without window or browser dependencies (perfect for Next.js API routes or pure Node.js processes).
+
 - **Global Document Options**:
   - **Formatting**: A4, Letter, custom sizes, portrait/landscape orientation, distinct margins, base fonts.
   - **Headers & Footers**: Custom render functions with full control.
@@ -391,7 +391,15 @@ Renders styled inline rich text within standard paragraphs. Fully supports nesti
 
 ```tsx
 <PdfText fontSize={12}>
-  This is standard text, <PdfSpan fontStyle="bold" color="#1e3a8a">bold blue inline text</PdfSpan>, and a <PdfSpan color="#2563eb" link="https://google.com">clickable link</PdfSpan> inside the paragraph!
+  This is standard text,{" "}
+  <PdfSpan fontStyle="bold" color="#1e3a8a">
+    bold blue inline text
+  </PdfSpan>
+  , and a{" "}
+  <PdfSpan color="#2563eb" link="https://google.com">
+    clickable link
+  </PdfSpan>{" "}
+  inside the paragraph!
 </PdfText>
 ```
 
