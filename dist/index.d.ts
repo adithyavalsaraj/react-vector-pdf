@@ -31,6 +31,12 @@ export declare interface CenterLabelOptions {
     style?: TextStyle;
 }
 
+export declare interface CustomFont {
+    name: string;
+    src: string;
+    style?: "normal" | "bold" | "italic" | "bolditalic";
+}
+
 declare type FontStyle = "normal" | "bold" | "italic" | "bolditalic";
 
 export declare interface PageNumberOptions {
@@ -116,6 +122,7 @@ export declare interface PDFOptions {
         style?: "normal" | "bold" | "italic" | "bolditalic";
         size?: number;
     };
+    customFonts?: CustomFont[];
     color?: string;
     lineHeight?: number;
 }
@@ -132,13 +139,13 @@ declare interface PdfPreviewProps extends Omit<PdfDocumentProps, "onReady" | "au
 }
 
 export declare class PdfRenderer {
-    private pdf;
-    private pageWidth;
-    private pageHeight;
+    pdf: jsPDF;
+    pageWidth: number;
+    pageHeight: number;
     private options;
     private cursorX;
     private cursorY;
-    private contentWidth;
+    contentWidth: number;
     private reservedBottomHeight;
     margin: {
         top: number;
@@ -169,7 +176,10 @@ export declare class PdfRenderer {
     get contentTop(): number;
     get contentBottom(): number;
     private indentStack;
-    private currentIndent;
+    currentIndent: {
+        left: number;
+        right: number;
+    };
     pushIndent(left: number, right: number): void;
     popIndent(): void;
     /**
@@ -194,6 +204,8 @@ export declare class PdfRenderer {
     };
     setReservedHeight(h: number): void;
     resetFlowCursor(): void;
+    private loadFontAsBase64;
+    private registerCustomFont;
     reset(): void;
     setHeaderFooter(header?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void, footer?: (pdf: jsPDF, pageNum: number, pageCount: number, renderer: PdfRenderer) => void): void;
     private applyBaseFont;
@@ -222,6 +234,8 @@ export declare class PdfRenderer {
     waitForTasks(): Promise<void>;
     private loadImageAsDataURL;
     paragraph(text: string, style?: TextStyle, maxWidth?: number): number;
+    private measureToken;
+    richParagraph(spans: TextSpan[], style?: TextStyle, maxWidth?: number): number;
     moveCursor(dx: number, dy: number): void;
     setCursor(x: number, y: number): void;
     getCursor(): {
@@ -240,6 +254,7 @@ export declare class PdfRenderer {
         width: number;
         height: number;
     };
+    ensureWordWrap(text: string, style?: TextStyle, maxWidth?: number): string;
     setMetadata(metadata: {
         title?: string;
         author?: string;
@@ -263,6 +278,27 @@ export declare class PdfRenderer {
         br?: number;
         bl?: number;
     }): void;
+}
+
+export declare const PdfSpan: default_2.FC<PdfSpanProps>;
+
+declare interface PdfSpanProps extends TextStyle {
+    children: default_2.ReactNode;
+    className?: string;
+    style?: default_2.CSSProperties;
+}
+
+export declare const PdfSvg: default_2.FC<PdfSvgProps>;
+
+declare interface PdfSvgProps {
+    children?: default_2.ReactNode;
+    w: number;
+    h: number;
+    x?: number;
+    y?: number;
+    viewBox?: string;
+    className?: string;
+    style?: default_2.CSSProperties;
 }
 
 export declare const PdfTable: default_2.FC<PdfTableProps>;
@@ -293,7 +329,7 @@ declare interface PdfTableProps {
 export declare const PdfText: default_2.FC<PdfTextProps>;
 
 declare interface PdfTextProps extends TextStyle {
-    children: string;
+    children: default_2.ReactNode;
     x?: number;
     y?: number;
     maxWidth?: number;
@@ -325,7 +361,13 @@ declare interface TableColumn {
     id?: string;
 }
 
+declare interface TextSpan {
+    text: string;
+    style: TextStyle;
+}
+
 export declare interface TextStyle {
+    fontName?: string;
     fontSize?: number;
     fontStyle?: "normal" | "bold" | "italic" | "bolditalic";
     color?: string;
@@ -334,9 +376,11 @@ export declare interface TextStyle {
     lineHeight?: number;
     showInAllPages?: boolean;
     scope?: "all" | "first-only" | "except-first" | number[];
+    link?: string;
 }
 
 export declare interface ViewStyle extends BoxStyle {
+    flexDirection?: "row" | "column";
     margin?: number | {
         top?: number;
         right?: number;
@@ -354,3 +398,17 @@ export declare interface ViewStyle extends BoxStyle {
 }
 
 export { }
+
+declare module "jspdf" {
+    interface jsPDF {
+        saveGraphicsState(): void;
+        restoreGraphicsState(): void;
+        setLineDashPattern(pattern: number[], start: number): void;
+        addFileToVFS(filename: string, content: string): void;
+        addFont(filename: string, fontName: string, fontStyle: string): void;
+        link(x: number, y: number, w: number, h: number, options: {
+            url: string;
+        }): void;
+        splitTextToSize(text: string, maxlen: number, options?: any): string[];
+    }
+}

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { DemoMode, DemoTab, PdfItem, PdfItemType } from "../types";
+import { PdfSpan, PdfView, PdfText } from "../../components";
 
 export const useDemoApp = () => {
   const [activeTab, setActiveTab] = useState<DemoTab>("demo");
@@ -135,6 +136,70 @@ export const useDemoApp = () => {
         color: "#6b7280",
       },
     },
+    {
+      id: "demo-spans",
+      type: "text",
+      props: {
+        children: React.createElement(
+          React.Fragment,
+          null,
+          "Introducing ",
+          React.createElement(PdfSpan, { fontStyle: "bold", color: "#1e3a8a", children: "Inline Styled Spans" }),
+          "! You can mix ",
+          React.createElement(PdfSpan, { fontStyle: "italic", color: "#d97706", children: "italics" }),
+          ", ",
+          React.createElement(PdfSpan, { fontStyle: "bolditalic", color: "#059669", children: "bold-italics" }),
+          ", or custom ",
+          React.createElement(PdfSpan, { color: "#2563eb", link: "https://github.com/adithyavalsaraj/react-vector-pdf", children: "active hyperlinks" }),
+          " directly inside any paragraph token."
+        ),
+        fontSize: 11,
+      },
+    },
+    {
+      id: "demo-row",
+      type: "view",
+      props: {
+        className: "flex flex-row gap-4 mb-4",
+        children: React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(
+            PdfView,
+            {
+              debug: true,
+              style: { padding: 4, borderWidth: 0.2, borderColor: "#2563eb", fillColor: "#eff6ff" }
+            },
+            React.createElement(PdfText, { fontStyle: "bold", color: "#1e3a8a", fontSize: 10, children: "Column A (Debug On)" }),
+            React.createElement(PdfText, { fontSize: 8.5, color: "#1e40af", children: "This column has spacing overlays active. Notice the red-dotted margins, solid green paddings, and blue-dashed content zone." })
+          ),
+          React.createElement(
+            PdfView,
+            {
+              style: { padding: 4, borderWidth: 0.2, borderColor: "#059669", fillColor: "#ecfdf5" }
+            },
+            React.createElement(PdfText, { fontStyle: "bold", color: "#065f46", fontSize: 10, children: "Column B (Standard)" }),
+            React.createElement(PdfText, { fontSize: 8.5, color: "#064e3b", children: "This is a sibling column. It distributes space dynamically inside the flex row context." })
+          )
+        ),
+      },
+    },
+    {
+      id: "demo-svg",
+      type: "svg",
+      props: {
+        width: 25,
+        height: 25,
+        children: React.createElement(
+          "svg",
+          { viewBox: "0 0 24 24" },
+          React.createElement("path", {
+            d: "M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z",
+            fill: "#f59e0b"
+          })
+        )
+      }
+    },
   ]);
 
   const addItem = (type: PdfItemType) => {
@@ -176,6 +241,18 @@ export const useDemoApp = () => {
         newItem.props = {
           children: "Grouped content or box",
           style: { borderWidth: 0, borderColor: "" },
+        };
+        break;
+      case "svg":
+        newItem.props = {
+          width: 30,
+          height: 30,
+          children: React.createElement(
+            "svg",
+            { viewBox: "0 0 24 24" },
+            React.createElement("circle", { cx: "12", cy: "12", r: "10", fill: "#3B82F6" }),
+            React.createElement("path", { d: "M8 12h8M12 8v8", stroke: "#FFFFFF", strokeWidth: "2" })
+          )
         };
         break;
     }

@@ -5,3 +5,5 @@ export { PdfDocument } from "./PdfProvider";
 export { PdfTable } from "./PdfTable";
 export { PdfText } from "./PdfText";
 export { PdfView } from "./PdfView";
+export { PdfSpan } from "./PdfSpan";
+export { PdfSvg } from "./PdfSvg";

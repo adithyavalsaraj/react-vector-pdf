@@ -1,4 +1,4 @@
-export type PdfItemType = "text" | "image" | "list" | "table" | "view";
+export type PdfItemType = "text" | "image" | "list" | "table" | "view" | "svg";
 
 export interface PdfItem {
   id: string;

@@ -32,11 +32,22 @@ function resolveMargin(
   };
 }
 
+export interface PdfRowContextValue {
+  N: number;
+  colIndex: number;
+  gap: number;
+  customWidths: (number | string | undefined)[];
+  rowStateRef: React.MutableRefObject<{ startX: number; startY: number; finalYs: number[] }>;
+}
+
+export const PdfRowContext = React.createContext<PdfRowContextValue | null>(null);
+
 export const PdfView: React.FC<PdfViewProps> = ({
   style = {},
   className,
   style: styleProp,
   children,
+  debug,
   x,
   y,
   w,
@@ -53,6 +64,94 @@ export const PdfView: React.FC<PdfViewProps> = ({
     start?: { x: number; y: number; page?: number };
     isAbsolute?: boolean;
   }>({}).current;
+
+  const isRow = (style as ViewStyle).flexDirection === "row";
+  const rowStateRef = React.useRef<{ startX: number; startY: number; finalYs: number[] }>({
+    startX: 0,
+    startY: 0,
+    finalYs: [],
+  });
+
+  if (isRow) {
+    const childArray = React.Children.toArray(children);
+    const N = childArray.length;
+    const gap = (style as ViewStyle).gap ?? 0;
+
+    // Collect explicit custom widths from sibling column definitions
+    const customWidths = childArray.map((child) => {
+      if (React.isValidElement(child)) {
+        const props = child.props as any;
+        if (typeof props.w === "number") return props.w;
+        const s = props.style;
+        if (s && (typeof s.width === "number" || typeof s.width === "string")) {
+          return s.width;
+        }
+      }
+      return undefined;
+    });
+
+    const renderedColumns = childArray.map((child, index) => {
+      const contextValue: PdfRowContextValue = {
+        N,
+        colIndex: index,
+        gap,
+        customWidths,
+        rowStateRef,
+      };
+
+      return (
+        <PdfRowContext.Provider value={contextValue} key={index}>
+          {child}
+        </PdfRowContext.Provider>
+      );
+    });
+
+    return (
+      <React.Fragment>
+        <div
+          ref={ref}
+          className={className}
+          style={{
+            ...(styleProp as React.CSSProperties),
+            position: "absolute",
+            visibility: "hidden",
+            pointerEvents: "none",
+          }}
+        />
+        <PdfViewInit
+          style={style as ViewStyle}
+          className={className}
+          computeStyle={computeStyle}
+          x={x}
+          y={y}
+          w={w}
+          h={h}
+          showInAllPages={showInAllPages}
+          scope={scope}
+          viewState={viewState}
+          rowStateRef={rowStateRef}
+          isRow={true}
+          debug={debug}
+        />
+        {renderedColumns}
+        <PdfViewFinisher
+          viewState={viewState}
+          style={style as ViewStyle}
+          className={className}
+          computeStyle={computeStyle}
+          x={x}
+          y={y}
+          w={w}
+          h={h}
+          showInAllPages={showInAllPages}
+          scope={scope}
+          rowStateRef={rowStateRef}
+          isRow={true}
+          debug={debug}
+        />
+      </React.Fragment>
+    );
+  }
 
   return (
     <React.Fragment>
@@ -77,6 +176,7 @@ export const PdfView: React.FC<PdfViewProps> = ({
         showInAllPages={showInAllPages}
         scope={scope}
         viewState={viewState}
+        debug={debug}
       />
       {style.gap
         ? React.Children.map(children, (child, index) => (
@@ -97,6 +197,7 @@ export const PdfView: React.FC<PdfViewProps> = ({
         h={h}
         showInAllPages={showInAllPages}
         scope={scope}
+        debug={debug}
       />
     </React.Fragment>
   );

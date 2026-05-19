@@ -27,6 +27,9 @@ export const BuilderControls: React.FC<BuilderControlsProps> = ({
       <button className="btn btn-sm" onClick={() => onAddItem("view")}>
         + View
       </button>
+      <button className="btn btn-sm" onClick={() => onAddItem("svg")}>
+        + SVG
+      </button>
       <button className="btn btn-sm outline" onClick={onClearAll}>
         Clear All
       </button>

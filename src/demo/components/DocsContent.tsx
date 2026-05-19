@@ -285,6 +285,76 @@ export const DocsContent: React.FC = () => {
 </PdfView>`}
       />
 
+      <h4>8. PdfSpan</h4>
+      <p>
+        Renders styled inline rich text within standard paragraphs. Fully supports nesting individual spans with specific fonts, sizes, weights, and clickable overlays.
+      </p>
+      <ul className="list-disc">
+        <li>
+          <code>fontSize</code> (number): Custom inline font size.
+        </li>
+        <li>
+          <code>fontStyle</code> ('normal' | 'bold' | 'italic' | 'bolditalic'): Custom inline font style.
+        </li>
+        <li>
+          <code>color</code> (string): Custom inline color.
+        </li>
+        <li>
+          <code>link</code> (string): Active URL hyperlink.
+        </li>
+      </ul>
+      <CodeBlock
+        code={`<PdfText fontSize={12}>
+  This is standard text, <PdfSpan fontStyle="bold" color="#1e3a8a">bold blue inline text</PdfSpan>, and a <PdfSpan color="#2563eb" link="https://google.com">clickable link</PdfSpan> inside the paragraph!
+</PdfText>`}
+      />
+
+      <h4>9. PdfSvg</h4>
+      <p>
+        Renders lightweight scalable vector graphics (SVGs) natively into the PDF. Parses path segments, circles, lines, rects, polylines, and polygons.
+      </p>
+      <ul className="list-disc">
+        <li>
+          <code>width</code> (number): SVG width in millimeters.
+        </li>
+        <li>
+          <code>height</code> (number): SVG height in millimeters.
+        </li>
+        <li>
+          <code>children</code>: Standard HTML SVG markup.
+        </li>
+      </ul>
+      <CodeBlock
+        code={`<PdfSvg width={30} height={30}>
+  <svg viewBox="0 0 24 24">
+    <path d="M12 2L2 22h20L12 2z" fill="#f59e0b" />
+  </svg>
+</PdfSvg>`}
+      />
+
+      <div className="hr"></div>
+
+      <h3>Debug Spacing Overlays</h3>
+      <p>
+        To inspect document bounds, margins, paddings, and alignment grids visually, you can pass the <code>debug={`{true}`}</code> prop to any <code>&lt;PdfView&gt;</code>, <code>&lt;PdfText&gt;</code>, or <code>&lt;PdfTable&gt;</code> component.
+      </p>
+      <ul className="list-disc">
+        <li>
+          <strong style={{ color: "red" }}>Red Dotted Line</strong>: Represents the element's margins (outer boundary).
+        </li>
+        <li>
+          <strong style={{ color: "green" }}>Green Solid Line</strong>: Represents the element's border box and paddings.
+        </li>
+        <li>
+          <strong style={{ color: "blue" }}>Blue Dashed Line</strong>: Represents the active children/text content zone.
+        </li>
+      </ul>
+      <CodeBlock
+        code={`<PdfView debug={true} style={{ padding: 5, borderWidth: 0.2 }}>
+  <PdfText>I draw visible spacing debug lines in the PDF preview!</PdfText>
+</PdfView>`}
+      />
+
       <div className="hr"></div>
 
       <h3>Styling with CSS Classes</h3>
@@ -478,6 +548,11 @@ export const DocsContent: React.FC = () => {
   {/* PDF will automatically download */}
 </PdfDocument>`}
       />
+
+      <h4>Server-Side Rendering (SSR) & Server Support</h4>
+      <p>
+        The engine is fully decoupled from the DOM. If running inside a server-side framework (e.g. Next.js API routes, Remix loader, or Node.js server action) where <code>window</code> and the DOM are absent, the style parsing fallback engine automatically resolves CSS classes inline and continues drawing perfectly.
+      </p>
 
       <div className="hr"></div>
 

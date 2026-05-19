@@ -173,7 +173,6 @@ export const PdfTable: React.FC<PdfTableProps> = ({
         const availW = w - pad.left - pad.right;
 
         // Manually split text to ensure wrapping respects the cell width
-        // @ts-ignore: jsPDF types mismatch for splitTextToSize
         const lines = pdf.instance.splitTextToSize(text, availW, style);
 
         const lineHeightMm =
@@ -277,22 +276,12 @@ export const PdfTable: React.FC<PdfTableProps> = ({
       const skipMap: number[] = new Array(columns.length).fill(0);
 
       const renderRows = () => {
-        const rowHeights: number[] = new Array(data.length).fill(0);
+        const rowHeights: number[] = new Array(data.length).fill(8);
 
-        // Pass 1: Measure Heights
-        // We'll calculate min height needed for each row based on single-row cells
-        // And store spanned cells to check later
-        const spannedCells: {
-          ri: number;
-          rSpan: number;
-          content: string;
-          width: number;
-          style: TextStyle & BoxStyle;
-        }[] = [];
-
+        // Unified Single-Pass Geometry Resolver
         for (let ri = 0; ri < data.length; ri++) {
           const row = data[ri];
-          let maxH = 0;
+          let maxSingleRowH = 8;
 
           for (let ci = 0; ci < columns.length; ci++) {
             const col = columns[ci];
@@ -319,50 +308,33 @@ export const PdfTable: React.FC<PdfTableProps> = ({
               if (ci + k < colWidths.length) effW += colWidths[ci + k];
             }
 
-            // If spans multiple rows, store for later check
-            if (rSpan > 1) {
-              spannedCells.push({
-                ri,
-                rSpan,
-                content,
-                width: effW,
-                style: style ?? {},
-              });
-              ci += cSpan - 1;
-              continue;
-            }
+            const contentH = measureCell(content, effW, style ?? {});
 
-            const h = measureCell(content, effW, style ?? {});
-            if (h > maxH) maxH = h;
+            if (rSpan > 1) {
+              let currentSpanSum = 0;
+              for (let k = 0; k < rSpan; k++) {
+                const targetRowIdx = ri + k;
+                if (targetRowIdx < rowHeights.length) {
+                  currentSpanSum += rowHeights[targetRowIdx];
+                }
+              }
+
+              if (contentH > currentSpanSum) {
+                const diff = contentH - currentSpanSum;
+                const lastRowIdx = Math.min(ri + rSpan - 1, rowHeights.length - 1);
+                rowHeights[lastRowIdx] += diff;
+              }
+            } else {
+              if (contentH > maxSingleRowH) {
+                maxSingleRowH = contentH;
+              }
+            }
 
             ci += cSpan - 1;
           }
-          if (maxH < 8) maxH = 8;
-          rowHeights[ri] = maxH;
+
+          rowHeights[ri] = Math.max(rowHeights[ri], maxSingleRowH);
         }
-
-        // Pass 1.5: Adjust heights for spanned cells
-        spannedCells.forEach((cell) => {
-          const { ri, rSpan, content, width, style } = cell;
-          const contentH = measureCell(content, width, style);
-
-          // Calculate current available height in the spanned rows
-          let currentSpanH = 0;
-          for (let k = 0; k < rSpan; k++) {
-            if (ri + k < rowHeights.length) {
-              currentSpanH += rowHeights[ri + k];
-            }
-          }
-
-          if (contentH > currentSpanH) {
-            // Distribute difference to the last row of the span (simplest approach)
-            // or maybe verify if it fits better elsewhere.
-            // Adding to last row is safe because it expands the block downwards.
-            const diff = contentH - currentSpanH;
-            const lastRowIdx = Math.min(ri + rSpan - 1, rowHeights.length - 1);
-            rowHeights[lastRowIdx] += diff;
-          }
-        });
 
         // Pass 2: Render
         let currentY = y;

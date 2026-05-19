@@ -4,15 +4,26 @@ import { hexToRgb, inScope } from "./utils";
 
 type FontStyle = "normal" | "bold" | "italic" | "bolditalic";
 
+export interface TextSpan {
+  text: string;
+  style: TextStyle;
+}
+
+interface TextToken {
+  text: string;
+  style: TextStyle;
+  isSpace: boolean;
+}
+
 export class PdfRenderer {
-  private pdf: jsPDF;
-  private pageWidth: number;
-  private pageHeight: number;
+  public pdf!: jsPDF;
+  public pageWidth!: number;
+  public pageHeight!: number;
   private options: PDFOptions;
 
   private cursorX = 0;
   private cursorY = 0;
-  private contentWidth = 0;
+  public contentWidth = 0;
   private reservedBottomHeight = 0;
 
   public margin = { top: 15, right: 15, bottom: 15, left: 15 };
@@ -52,7 +63,6 @@ export class PdfRenderer {
   }> = [];
 
   constructor(opts: PDFOptions = {}) {
-    // ... ctor ...
     this.options = opts;
     this.margin = opts.margin ?? this.margin;
     this.defaultFont = {
@@ -63,17 +73,7 @@ export class PdfRenderer {
     this.defaultColor = opts.color ?? this.defaultColor;
     this.defaultLineHeight = opts.lineHeight ?? this.defaultLineHeight;
 
-    this.pdf = new jsPDF({
-      unit: opts.unit ?? "mm",
-      format: opts.format ?? "a4",
-      orientation: opts.orientation ?? "p",
-    });
-
-    this.pageWidth = this.pdf.internal.pageSize.getWidth();
-    this.pageHeight = this.pdf.internal.pageSize.getHeight();
-
-    this.resetFlowCursor();
-    this.applyBaseFont();
+    this.reset();
   }
 
   // Implementation of Stack Methods
@@ -125,7 +125,7 @@ export class PdfRenderer {
   }
 
   private indentStack: { left: number; right: number }[] = [];
-  private currentIndent = { left: 0, right: 0 };
+  public currentIndent = { left: 0, right: 0 };
 
   pushIndent(left: number, right: number) {
     this.indentStack.push({ ...this.currentIndent });
@@ -236,6 +236,43 @@ export class PdfRenderer {
       this.currentIndent.right;
   }
 
+  private async loadFontAsBase64(url: string): Promise<string> {
+    if (url.startsWith("data:")) {
+      const comma = url.indexOf(",");
+      return comma !== -1 ? url.slice(comma + 1) : url;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch font at ${url}`);
+    }
+    const buffer = await response.arrayBuffer();
+
+    // Chunked Base64 encoding to avoid call stack limits on large buffers
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunk = 8192;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(
+        null,
+        bytes.subarray(i, i + chunk) as any
+      );
+    }
+    return btoa(binary);
+  }
+
+  private async registerCustomFont(font: { name: string; src: string; style?: string }) {
+    try {
+      const base64 = await this.loadFontAsBase64(font.src);
+      const filename = `${font.name}-${font.style || "normal"}.ttf`;
+
+      this.pdf.addFileToVFS(filename, base64);
+      this.pdf.addFont(filename, font.name, font.style || "normal");
+    } catch (e) {
+      console.error(`Failed to register custom font: ${font.name}`, e);
+    }
+  }
+
   reset() {
     // Re-initialize jsPDF with saved options
     this.pdf = new jsPDF({
@@ -243,6 +280,9 @@ export class PdfRenderer {
       format: this.options.format ?? "a4",
       orientation: this.options.orientation ?? "p",
     });
+
+    this.pageWidth = this.pdf.internal.pageSize.getWidth();
+    this.pageHeight = this.pdf.internal.pageSize.getHeight();
 
     this.generation++; // Invalidate pending operations
 
@@ -263,6 +303,15 @@ export class PdfRenderer {
       if (rgb) this.pdf.setTextColor(...rgb);
     }
     this.recurringItems = [];
+
+    // Re-queue custom fonts
+    if (this.options.customFonts && this.options.customFonts.length > 0) {
+      this.options.customFonts.forEach((font) => {
+        this.queueOperation(async () => {
+          await this.registerCustomFont(font);
+        });
+      });
+    }
   }
 
   setHeaderFooter(
@@ -360,13 +409,15 @@ export class PdfRenderer {
     const fontSize = style.fontSize;
     const fontStyle = style.fontStyle;
     const colorStr = style.color;
+    const fontName = style.fontName;
 
     this.drawOp(() => {
       if (fontSize) this.pdf.setFontSize(fontSize);
 
-      if (fontStyle) {
-        const family = this.pdf.getFont().fontName;
-        this.pdf.setFont(family, fontStyle as FontStyle);
+      if (fontName || fontStyle) {
+        const family = fontName ?? this.pdf.getFont().fontName;
+        const styleName = fontStyle ?? (this.pdf.getFont().fontStyle as FontStyle);
+        this.pdf.setFont(family, styleName);
       }
 
       if (colorStr) {
@@ -374,12 +425,10 @@ export class PdfRenderer {
         if (color) {
           this.pdf.setTextColor(color[0], color[1], color[2]);
           if (color[3] !== undefined) {
-            // @ts-ignore: jsPDF GState type definition missing
             this.pdf.setGState(
               new (this.pdf as any).GState({ opacity: color[3] })
             );
           } else {
-            // @ts-ignore: jsPDF GState type definition missing
             this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
           }
         }
@@ -400,6 +449,19 @@ export class PdfRenderer {
     if (typeof maxWidth === "number") opts.maxWidth = maxWidth;
     this.drawOp(() => {
       this.pdf.text(text, x, y, opts);
+      if (style?.link) {
+        const fontSize = style.fontSize ?? this.defaultFont.size;
+        const fontSizeMm = fontSize * 0.3528;
+        const lineWidth = this.pdf.getStringUnitWidth(text) * fontSizeMm;
+        let linkX = x;
+        if (align === "center") {
+          linkX = x - lineWidth / 2;
+        } else if (align === "right") {
+          linkX = x - lineWidth;
+        }
+        const linkY = y - fontSizeMm;
+        this.pdf.link(linkX, linkY, lineWidth, fontSizeMm * 1.2, { url: style.link });
+      }
     });
     this.applyBaseFont();
   }
@@ -414,7 +476,6 @@ export class PdfRenderer {
           const fillRgb = hexToRgb(s.fillColor);
           if (fillRgb) {
             if (fillRgb[3] !== undefined) {
-              // @ts-ignore: jsPDF GState type definition missing
               this.pdf.setGState(
                 new (this.pdf as any).GState({ opacity: fillRgb[3] })
               );
@@ -430,7 +491,6 @@ export class PdfRenderer {
             const strokeRgb = hexToRgb(s.borderColor);
             if (strokeRgb) {
               if (strokeRgb[3] !== undefined) {
-                // @ts-ignore: jsPDF GState type definition missing
                 this.pdf.setGState(
                   new (this.pdf as any).GState({ opacity: strokeRgb[3] })
                 );
@@ -456,7 +516,6 @@ export class PdfRenderer {
         // Reset defaults
         this.pdf.setLineWidth(0.2);
         this.pdf.setDrawColor(0, 0, 0);
-        // @ts-ignore: jsPDF GState type definition missing
         this.pdf.setGState(new (this.pdf as any).GState({ opacity: 1 }));
       }
     });
@@ -643,6 +702,7 @@ export class PdfRenderer {
 
   paragraph(text: string, style?: TextStyle, maxWidth?: number) {
     const width = maxWidth ?? this.contentWidth;
+    text = this.ensureWordWrap(text, style, width);
     this.setTextStyle(style);
     const lh = style?.lineHeight ?? this.defaultLineHeight;
     const fontSize = style?.fontSize ?? this.defaultFont.size;
@@ -675,6 +735,16 @@ export class PdfRenderer {
 
       this.drawOp(() => {
         this.pdf.text(ln, textX, textY, { align, maxWidth: width });
+        if (style?.link) {
+          const lineWidth = this.pdf.getStringUnitWidth(ln) * fontSizeMm;
+          let linkX = this.cursorX;
+          if (align === "center") {
+            linkX = this.cursorX + (width - lineWidth) / 2;
+          } else if (align === "right") {
+            linkX = this.cursorX + width - lineWidth;
+          }
+          this.pdf.link(linkX, this.cursorY, lineWidth, lineHeightMm, { url: style.link });
+        }
       });
 
       // Advance cursor
@@ -683,6 +753,155 @@ export class PdfRenderer {
     });
 
     // Add small spacing after block
+    this.applyBaseFont();
+    return totalHeight;
+  }
+
+  private measureToken(text: string, style: TextStyle): number {
+    const fontSize = style.fontSize ?? this.defaultFont.size;
+    const fontName = style.fontName ?? this.defaultFont.name ?? this.pdf.getFont().fontName;
+    const fontStyle = style.fontStyle ?? (this.pdf.getFont().fontStyle as FontStyle);
+
+    this.pdf.setFont(fontName, fontStyle);
+    this.pdf.setFontSize(fontSize);
+
+    return this.pdf.getStringUnitWidth(text) * fontSize * 0.3528;
+  }
+
+  richParagraph(spans: TextSpan[], style?: TextStyle, maxWidth?: number): number {
+    const width = maxWidth ?? this.contentWidth;
+    const align = style?.align ?? "left";
+
+    // Tokenize all spans into words and whitespaces
+    const tokens: TextToken[] = [];
+    spans.forEach((span) => {
+      const words = span.text.split(/(\s+)/);
+      words.forEach((w) => {
+        if (!w) return;
+        tokens.push({
+          text: w,
+          style: span.style,
+          isSpace: /^\s+$/.test(w),
+        });
+      });
+    });
+
+    // Group tokens into lines that fit within maxWidth
+    const processedTokens: TextToken[] = [];
+    tokens.forEach((token) => {
+      if (token.isSpace) {
+        processedTokens.push(token);
+        return;
+      }
+      const tokenWidth = this.measureToken(token.text, token.style);
+      if (tokenWidth <= width) {
+        processedTokens.push(token);
+        return;
+      }
+      let currentWord = "";
+      for (let i = 0; i < token.text.length; i++) {
+        const char = token.text[i];
+        const nextWord = currentWord + char;
+        const nextWidth = this.measureToken(nextWord, token.style);
+        if (nextWidth > width) {
+          processedTokens.push({
+            text: currentWord,
+            style: token.style,
+            isSpace: false,
+          });
+          currentWord = char;
+        } else {
+          currentWord = nextWord;
+        }
+      }
+      if (currentWord) {
+        processedTokens.push({
+          text: currentWord,
+          style: token.style,
+          isSpace: false,
+        });
+      }
+    });
+
+    const lines: TextToken[][] = [];
+    let currentLine: TextToken[] = [];
+    let currentLineWidth = 0;
+
+    processedTokens.forEach((token) => {
+      const tokenWidth = this.measureToken(token.text, token.style);
+
+      if (currentLineWidth + tokenWidth > width && currentLine.length > 0) {
+        if (token.isSpace) return; // Skip leading spaces
+        lines.push(currentLine);
+        currentLine = [token];
+        currentLineWidth = tokenWidth;
+      } else {
+        currentLine.push(token);
+        currentLineWidth += tokenWidth;
+      }
+    });
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+
+    let totalHeight = 0;
+
+    lines.forEach((line) => {
+      let maxLineHeightMm = 0;
+      let maxFontSize = 0;
+
+      line.forEach((tok) => {
+        const lh = tok.style.lineHeight ?? this.defaultLineHeight;
+        const fontSize = tok.style.fontSize ?? this.defaultFont.size;
+        const h = fontSize * lh * 0.3528;
+        if (h > maxLineHeightMm) maxLineHeightMm = h;
+        if (fontSize > maxFontSize) maxFontSize = fontSize;
+      });
+
+      if (this.cursorY + maxLineHeightMm > this.contentBottom) {
+        this.addPage();
+      }
+
+      const maxFontSizeMm = maxFontSize * 0.3528;
+      const textY = this.cursorY + maxFontSizeMm + (maxLineHeightMm - maxFontSizeMm) / 2;
+
+      let totalLineWidth = 0;
+      const tokenWidths = line.map((tok) => {
+        const w = this.measureToken(tok.text, tok.style);
+        totalLineWidth += w;
+        return w;
+      });
+
+      let startX = this.cursorX;
+      if (align === "center") {
+        startX = this.cursorX + (width - totalLineWidth) / 2;
+      } else if (align === "right") {
+        startX = this.cursorX + width - totalLineWidth;
+      }
+
+      let currentX = startX;
+      line.forEach((tok, idx) => {
+        const tokWidth = tokenWidths[idx];
+
+        this.setTextStyle(tok.style);
+
+        this.drawOp(() => {
+          this.pdf.text(tok.text, currentX, textY);
+          if (tok.style.link) {
+            const fontSize = tok.style.fontSize ?? this.defaultFont.size;
+            const fontSizeMm = fontSize * 0.3528;
+            const linkY = textY - fontSizeMm;
+            this.pdf.link(currentX, linkY, tokWidth, fontSizeMm * 1.2, { url: tok.style.link });
+          }
+        });
+
+        currentX += tokWidth;
+      });
+
+      this.cursorY += maxLineHeightMm;
+      totalHeight += maxLineHeightMm;
+    });
+
     this.applyBaseFont();
     return totalHeight;
   }
@@ -723,6 +942,7 @@ export class PdfRenderer {
   }
 
   measureText(text: string, style?: TextStyle, maxWidth?: number) {
+    text = this.ensureWordWrap(text, style, maxWidth);
     this.setTextStyle(style);
     const fontSize = style?.fontSize ?? this.defaultFont.size;
     // jsPDF unit handling is tricky, simplified here:
@@ -740,6 +960,41 @@ export class PdfRenderer {
       const dims = this.pdf.getTextDimensions(text);
       return { width: dims.w, height: dims.h };
     }
+  }
+
+  ensureWordWrap(text: string, style?: TextStyle, maxWidth?: number): string {
+    if (!maxWidth || !text) return text;
+    this.setTextStyle(style);
+    const fontSize = style?.fontSize ?? this.defaultFont.size;
+
+    // splitTextToSize has some edge cases with very long unbroken words.
+    // If a word's width exceeds maxWidth, we hard-wrap it.
+    const words = text.split(" ");
+    const processedWords = words.map(word => {
+      const wordWidth = this.pdf.getStringUnitWidth(word) * fontSize * 0.3528;
+      if (wordWidth <= maxWidth) return word;
+
+      // Word is too wide! Break it character by character.
+      let result = "";
+      let currentChunk = "";
+      for (let i = 0; i < word.length; i++) {
+        const char = word[i];
+        const nextChunk = currentChunk + char;
+        const nextChunkWidth = this.pdf.getStringUnitWidth(nextChunk) * fontSize * 0.3528;
+        if (nextChunkWidth > maxWidth) {
+          result += (result ? " " : "") + currentChunk;
+          currentChunk = char;
+        } else {
+          currentChunk = nextChunk;
+        }
+      }
+      if (currentChunk) {
+        result += (result ? " " : "") + currentChunk;
+      }
+      return result;
+    });
+
+    return processedWords.join(" ");
   }
 
   setMetadata(metadata: {
@@ -787,7 +1042,6 @@ export class PdfRenderer {
     color: string,
     radius?: number | { tl?: number; tr?: number; br?: number; bl?: number }
   ) {
-    // @ts-ignore
     const pages = this.pdf.internal.pages;
 
     let page = pages[pageNum];
@@ -799,9 +1053,7 @@ export class PdfRenderer {
 
     if (!page) return;
 
-    // @ts-ignore
     const k = this.pdf.internal.scaleFactor;
-    // @ts-ignore
     const pageHeight = this.pdf.internal.pageSize.getHeight();
 
     // Convert coordinates to PDF points (Bottom-Up Y axis)

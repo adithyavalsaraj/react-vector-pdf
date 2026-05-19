@@ -103,7 +103,142 @@ function parseMargin(style: CSSStyleDeclaration) {
   };
 }
 
+function resolveServerStyle(styleProp?: React.CSSProperties): ResolvedStyle {
+  if (!styleProp) return {};
+  const res: ResolvedStyle = {};
+
+  const toMm = (val: any): number | undefined => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const parsed = parseFloat(val);
+      if (isNaN(parsed)) return undefined;
+      if (val.endsWith("px")) return parsed * PX_TO_MM;
+      if (val.endsWith("mm")) return parsed;
+      if (val.endsWith("pt")) return parsed * 0.3528;
+      return parsed;
+    }
+    return undefined;
+  };
+
+  const toPt = (val: any): number | undefined => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const parsed = parseFloat(val);
+      if (isNaN(parsed)) return undefined;
+      if (val.endsWith("px")) return parsed * PX_TO_PT;
+      if (val.endsWith("mm")) return parsed / 0.3528;
+      if (val.endsWith("pt")) return parsed;
+      return parsed;
+    }
+    return undefined;
+  };
+
+  if (styleProp.fontFamily) {
+    const cleanFont = styleProp.fontFamily.split(",")[0].trim().replace(/['"]/g, "");
+    if (cleanFont && cleanFont !== "sans-serif" && cleanFont !== "serif" && cleanFont !== "monospace") {
+      res.fontName = cleanFont;
+    }
+  }
+
+  if (styleProp.fontSize !== undefined) {
+    const fs = toPt(styleProp.fontSize);
+    if (fs) res.fontSize = fs;
+  }
+
+  const fw = styleProp.fontWeight;
+  const fs = styleProp.fontStyle;
+  if (fs === "italic") {
+    if (fw === "bold" || fw === "700" || (typeof fw === "number" && fw >= 700)) {
+      res.fontStyle = "bolditalic";
+    } else {
+      res.fontStyle = "italic";
+    }
+  } else if (fw === "bold" || fw === "700" || (typeof fw === "number" && fw >= 700)) {
+    res.fontStyle = "bold";
+  } else if (fs === "normal" || fs === "oblique") {
+    res.fontStyle = "normal";
+  }
+
+  if (styleProp.color) res.color = styleProp.color;
+
+  if (styleProp.textAlign) {
+    const align = parseAlign(styleProp.textAlign);
+    if (align) res.align = align;
+  }
+
+  if (styleProp.verticalAlign) {
+    const va = parseVerticalAlign(styleProp.verticalAlign as string);
+    if (va) res.verticalAlign = va;
+  }
+
+  if (styleProp.lineHeight !== undefined) {
+    if (typeof styleProp.lineHeight === "number") {
+      res.lineHeight = styleProp.lineHeight;
+    } else if (typeof styleProp.lineHeight === "string") {
+      const parsed = parseFloat(styleProp.lineHeight);
+      if (!isNaN(parsed)) res.lineHeight = parsed;
+    }
+  }
+
+  if (styleProp.backgroundColor) res.fillColor = styleProp.backgroundColor;
+  if (styleProp.borderColor) res.borderColor = styleProp.borderColor;
+
+  if (styleProp.borderWidth !== undefined) {
+    const bw = toMm(styleProp.borderWidth);
+    if (bw) res.borderWidth = bw;
+  }
+
+  const padTop = toMm(styleProp.paddingTop ?? styleProp.padding);
+  const padRight = toMm(styleProp.paddingRight ?? styleProp.padding);
+  const padBottom = toMm(styleProp.paddingBottom ?? styleProp.padding);
+  const padLeft = toMm(styleProp.paddingLeft ?? styleProp.padding);
+  if (padTop !== undefined || padRight !== undefined || padBottom !== undefined || padLeft !== undefined) {
+    res.padding = {
+      top: padTop ?? 0,
+      right: padRight ?? 0,
+      bottom: padBottom ?? 0,
+      left: padLeft ?? 0,
+    };
+  }
+
+  const margTop = toMm(styleProp.marginTop ?? styleProp.margin);
+  const margRight = toMm(styleProp.marginRight ?? styleProp.margin);
+  const margBottom = toMm(styleProp.marginBottom ?? styleProp.margin);
+  const margLeft = toMm(styleProp.marginLeft ?? styleProp.margin);
+  if (margTop !== undefined || margRight !== undefined || margBottom !== undefined || margLeft !== undefined) {
+    res.margin = {
+      top: margTop ?? 0,
+      right: margRight ?? 0,
+      bottom: margBottom ?? 0,
+      left: margLeft ?? 0,
+    };
+  }
+
+  if (styleProp.width !== undefined) {
+    const wVal = toMm(styleProp.width);
+    if (wVal) res.width = wVal;
+  }
+  if (styleProp.height !== undefined) {
+    const hVal = toMm(styleProp.height);
+    if (hVal) res.height = hVal;
+  }
+
+  if (styleProp.gap !== undefined) {
+    const gp = toMm(styleProp.gap);
+    if (gp) res.gap = gp;
+  }
+
+  if (styleProp.borderRadius !== undefined) {
+    const rad = toMm(styleProp.borderRadius);
+    if (rad) res.radius = rad;
+  }
+
+  return res;
+}
+
 export type ResolvedStyle = TextStyle & BoxStyle & ViewStyle;
+
+const computedStyleCache = new Map<string, ResolvedStyle>();
 
 export function useClassStyles(
   className?: string,
@@ -113,6 +248,16 @@ export function useClassStyles(
 
   // Return a getter that ensures we read after render
   const computeStyle = (): ResolvedStyle => {
+    // If window is undefined (SSR / server environments), resolve styles inline immediately
+    if (typeof window === "undefined") {
+      return resolveServerStyle(style);
+    }
+
+    const hasInlineStyle = style && Object.keys(style).length > 0;
+    if (className && !hasInlineStyle && computedStyleCache.has(className)) {
+      return computedStyleCache.get(className)!;
+    }
+
     if (!ref.current) return {};
     const computed = window.getComputedStyle(ref.current);
 
@@ -142,6 +287,14 @@ export function useClassStyles(
     const res: ResolvedStyle = {};
 
     // Text Style
+    const fontFamily = computed.fontFamily;
+    if (fontFamily) {
+      const cleanFont = fontFamily.split(",")[0].trim().replace(/['"]/g, "");
+      if (cleanFont && cleanFont !== "sans-serif" && cleanFont !== "serif" && cleanFont !== "monospace") {
+        res.fontName = cleanFont;
+      }
+    }
+
     const fontSize = pxToPt(computed.fontSize);
     if (fontSize) res.fontSize = fontSize;
 
@@ -224,6 +377,10 @@ export function useClassStyles(
     // Radius
     const rad = pxToMm(computed.borderRadius);
     if (rad) res.radius = rad;
+
+    if (className && !hasInlineStyle) {
+      computedStyleCache.set(className, res);
+    }
 
     return res;
   };

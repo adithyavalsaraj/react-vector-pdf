@@ -2,6 +2,7 @@ import React from "react";
 import { ViewStyle } from "../../core/types";
 import { resolvePadding } from "../../core/utils";
 import { usePdf } from "../PdfProvider";
+import { PdfRowContext } from "../PdfView";
 
 export interface PdfViewInitProps {
   style: ViewStyle;
@@ -17,6 +18,9 @@ export interface PdfViewInitProps {
     start?: { x: number; y: number; page?: number };
     isAbsolute?: boolean;
   };
+  isRow?: boolean;
+  rowStateRef?: React.MutableRefObject<{ startX: number; startY: number; finalYs: number[] }>;
+  debug?: boolean;
 }
 
 // Indent cursor for padding to ensure content respects the padded area.
@@ -46,9 +50,13 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
   showInAllPages,
   scope,
   viewState,
+  isRow,
+  rowStateRef,
+  debug,
 }) => {
   const pdf = usePdf();
   const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
+  const rowContext = React.useContext(PdfRowContext);
 
   React.useLayoutEffect(() => {
     // Only queue once per renderer instance/generation to prevent double-indents
@@ -98,6 +106,13 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
         left: style.marginLeft ?? baseMargin.left,
       };
 
+      // If we are a row container, record initial coordinate points
+      if (isRow && rowStateRef) {
+        rowStateRef.current.startX = pdf.getCursor().x;
+        rowStateRef.current.startY = pdf.getCursor().y;
+        rowStateRef.current.finalYs = [];
+      }
+
       if (
         typeof x === "number" &&
         typeof y === "number" &&
@@ -120,30 +135,68 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
           pdf.moveCursor(0, style.height);
         }
 
-        // Note: Recording is disabled here to avoid issues with React Effect ordering.
-        // pdf.startRecording(); // DISABLED due to React Effect ordering issues causing content to be excluded
+        if (rowContext) {
+          const rowStartY = rowContext.rowStateRef.current.startY;
+          pdf.setCursor(pdf.getCursor().x, rowStartY);
+        }
 
         const start = pdf.getCursor();
         const page = pdf.getPageCount();
         viewState.start = { ...start, page };
 
         // Use pushIndent to persist indentation across page breaks.
-        // @ts-ignore
         if (pdf.pushIndent) {
           // Apply Indentation
-          if (pad.left > 0 || pad.right > 0) {
-            // @ts-ignore
+          if (rowContext) {
+            const currentAbsoluteLeft = pdf.margin.left + pdf.currentIndent.left;
+            const currentAbsoluteRight = pdf.pageWidth - pdf.margin.right - pdf.currentIndent.right;
+
+            const parentStartX = rowContext.rowStateRef.current.startX;
+            const parentWidth = pdf.contentWidth;
+            const totalGaps = (rowContext.N - 1) * rowContext.gap;
+            const netAvailableWidth = Math.max(0, parentWidth - totalGaps);
+
+            const colWidths = rowContext.customWidths.map((wVal) => {
+              if (typeof wVal === "number") return wVal;
+              if (typeof wVal === "string" && wVal.endsWith("%")) {
+                return netAvailableWidth * (parseFloat(wVal) / 100);
+              }
+              return null;
+            });
+
+            const assignedSum = colWidths.reduce((sum: number, wVal) => sum + (wVal ?? 0), 0);
+            const remainingWidth = Math.max(0, netAvailableWidth - assignedSum);
+            const unassignedCount = colWidths.filter((wVal) => wVal === null).length;
+            const equalWidth = unassignedCount > 0 ? remainingWidth / unassignedCount : 0;
+
+            const finalWidths = colWidths.map((wVal) => wVal ?? equalWidth);
+
+            const colWidth = finalWidths[rowContext.colIndex];
+            let colX = parentStartX;
+            for (let i = 0; i < rowContext.colIndex; i++) {
+              colX += finalWidths[i] + rowContext.gap;
+            }
+
+            // Expose computed colWidth to finisher via viewState
+            (viewState as any).colWidth = colWidth;
+
+            const targetAbsoluteLeft = colX + pad.left;
+            const targetAbsoluteRight = colX + colWidth - pad.right;
+
+            const indentLeft = targetAbsoluteLeft - currentAbsoluteLeft;
+            const indentRight = currentAbsoluteRight - targetAbsoluteRight;
+
+            pdf.pushIndent(indentLeft, indentRight);
+            (viewState as any).hasIndent = true;
+          } else if (pad.left > 0 || pad.right > 0) {
             pdf.pushIndent(pad.left, pad.right);
             (viewState as any).hasIndent = true;
           }
 
           // Also move Y for padding Top
           // Note: pushIndent moves X. pushVerticalPadding moves Y and manages stack.
-          // @ts-ignore
           if (pdf.pushVerticalPadding) {
-            // @ts-ignore
             pdf.pushVerticalPadding(pad.top, pad.bottom);
-            // We do NOT call moveCursor(0, pad.top) because pushVerticalPadding does it.
           } else {
             // Fallback
             if (pad.top > 0) pdf.moveCursor(0, pad.top);
@@ -157,7 +210,7 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, styleProp, x, y, w, h, showInAllPages, scope]);
+  }, [pdf, styleProp, x, y, w, h, showInAllPages, scope, isRow, rowStateRef, rowContext, debug]);
 
   return null;
 };

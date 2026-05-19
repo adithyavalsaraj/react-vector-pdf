@@ -2,6 +2,7 @@ import React from "react";
 import type { ViewStyle } from "../../core/types";
 import { hexToRgb, resolvePadding } from "../../core/utils";
 import { usePdf } from "../PdfProvider";
+import { PdfRowContext } from "../PdfView";
 
 export interface PdfViewFinisherProps {
   viewState: {
@@ -17,6 +18,9 @@ export interface PdfViewFinisherProps {
   h?: number;
   showInAllPages?: boolean;
   scope?: any;
+  isRow?: boolean;
+  rowStateRef?: React.MutableRefObject<{ startX: number; startY: number; finalYs: number[] }>;
+  debug?: boolean;
 }
 
 export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
@@ -28,9 +32,13 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
   h,
   showInAllPages,
   scope: scopeProp,
+  isRow,
+  rowStateRef,
+  debug,
 }) => {
   const pdf = usePdf();
   const queuedRef = React.useRef<{ pdf: any; gen: number } | null>(null);
+  const rowContext = React.useContext(PdfRowContext);
 
   React.useLayoutEffect(() => {
     // Ensure operation is queued only once per generation.
@@ -98,11 +106,11 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       };
 
       // Box width
-      let boxW = w ?? pdf.contentAreaWidth;
+      let boxWidthWithPadding = w ?? (viewState as any).colWidth ?? pdf.contentAreaWidth;
       if (typeof style.width === "number") {
-        boxW = style.width;
+        boxWidthWithPadding = style.width;
       }
-      const boxWidthWithPadding = boxW + pad.left + pad.right;
+      const boxW = boxWidthWithPadding - pad.left - pad.right;
 
       // Strategy: Calculate geometry and draw background/borders.
 
@@ -159,6 +167,55 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
 
         const r = style.radius ?? 0;
         const isSinglePageItem = startPage === endPage;
+
+        // Draw Spacing Debug Bounding Boxes (Margin = Red, Border/Padding = Green, Content = Blue)
+        if (debug) {
+          const inst = pdf.instance;
+          if (typeof inst.saveGraphicsState === "function") {
+            inst.saveGraphicsState();
+          }
+
+          const rx = Math.max(start.x, pdf.margin.left);
+          const ry = drawY;
+          const rw = boxWidthWithPadding;
+          const rh = drawH;
+
+          // 1. Draw Outer Margin Boundary (Red, Dotted)
+          const marginX = rx - margin.left;
+          const marginY = ry - margin.top;
+          const marginW = rw + margin.left + margin.right;
+          const marginH = rh + margin.top + margin.bottom;
+          inst.setLineWidth(0.15);
+          inst.setDrawColor(239, 68, 68); // Red (Tailwind red-500)
+          if (typeof inst.setLineDashPattern === "function") {
+            inst.setLineDashPattern([1, 1], 0);
+          }
+          inst.rect(marginX, marginY, marginW, marginH, "S");
+
+          // 2. Draw Padding Boundary (Green, Solid)
+          inst.setLineWidth(0.15);
+          inst.setDrawColor(34, 197, 94); // Green (Tailwind green-500)
+          if (typeof inst.setLineDashPattern === "function") {
+            inst.setLineDashPattern([], 0);
+          }
+          inst.rect(rx, ry, rw, rh, "S");
+
+          // 3. Draw Content Area Boundary (Blue, Dashed)
+          const contentX = rx + pad.left;
+          const contentY = ry + pad.top;
+          const contentW = Math.max(0, rw - pad.left - pad.right);
+          const contentH = Math.max(0, rh - pad.top - pad.bottom);
+          inst.setLineWidth(0.15);
+          inst.setDrawColor(59, 130, 246); // Blue (Tailwind blue-500)
+          if (typeof inst.setLineDashPattern === "function") {
+            inst.setLineDashPattern([2, 1], 0);
+          }
+          inst.rect(contentX, contentY, contentW, contentH, "S");
+
+          if (typeof inst.restoreGraphicsState === "function") {
+            inst.restoreGraphicsState();
+          }
+        }
 
         // Draw Borders (Foreground)
         if (style.borderWidth && style.borderWidth > 0) {
@@ -350,9 +407,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
         // Let's set cursor to 'after.y' first.
         pdf.setCursor(start.x, after.y);
 
-        // @ts-ignore
         if (pdf.popVerticalPadding) {
-          // @ts-ignore
           pdf.popVerticalPadding(); // Adds pad.bottom
         } else {
           // Fallback
@@ -364,16 +419,28 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
         if (margin.bottom > 0) {
           pdf.moveCursor(0, margin.bottom);
         }
+
+        // Report final Y coordinate if this is a column element inside a row container
+        if (rowContext) {
+          const finalColY = pdf.getCursor().y;
+          rowContext.rowStateRef.current.finalYs[rowContext.colIndex] = finalColY;
+        }
       }
 
       // Restore Indentation
       if ((viewState as any).hasIndent) {
-        // @ts-ignore
         if (pdf.popIndent) pdf.popIndent();
+      }
+
+      // If we are a row container, we must synchronize the cursor at the bottom of the tallest column
+      if (isRow && rowStateRef) {
+        const parentStartX = rowStateRef.current.startX;
+        const maxEndY = Math.max(...rowStateRef.current.finalYs, rowStateRef.current.startY);
+        pdf.setCursor(parentStartX, maxEndY);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, styleProp, w, h, showInAllPages, scopeProp]);
+  }, [pdf, styleProp, w, h, showInAllPages, scopeProp, isRow, rowStateRef, rowContext, debug]);
 
   return null;
 };

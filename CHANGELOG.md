@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.7.0] - 2026-05-19
+
+### ✨ New Features
+
+#### **Inline Styled Spans & Hyperlinks (`<PdfSpan>`)**
+- Added first-class support for `<PdfSpan>` component inside paragraphs.
+- Mix distinct colors, styles (`bold`, `italic`, `bolditalic`), and sizes within a single `<PdfText>` paragraph.
+- Added native active clickable hyperlink support (`link` prop) that adds interactive navigation overlays directly inside PDF text segments.
+
+#### **Lightweight Vector SVG Elements (`<PdfSvg>`)**
+- Added native vector path parsing support via the new `<PdfSvg>` element.
+- Seamlessly processes `<path>`, `<line>`, `<rect>`, `<circle>`, `<ellipse>`, `<polygon>`, and `<polyline>` children.
+- Draws high-performance vector graphics natively into the PDF stream preserving full vector quality without pixelation.
+
+#### **Flexbox Grid Rows**
+- Added side-by-side flex layout modeling (`flex flex-row gap-*`) for sibling containers.
+- Siblings divide available content width dynamically inside the horizontal row flexbox zone.
+
+#### **Visual Spacing Debug Boundaries**
+- Added `debug={true}` visual overlay options to `<PdfView>`, `<PdfText>`, and `<PdfTable>`.
+- Renders outer margins as a dotted red boundary, border boxes and padding as a solid green line, and content zones as a dashed blue container.
+
+#### **Decoupled Server-Side Rendering (SSR) & Node.js Support**
+- Decoupled style sheets computation from the DOM.
+- Implemented inline style sheet fallbacks when browser contexts (like `window` or `document`) are absent.
+- Full server runtime support (e.g. Next.js API routes or pure Node.js background processors).
+
+### 🐛 Bug Fixes & Refactoring
+
+- **Unified Single-Pass Geometry Breaking**: Consolidated rowspan/colspan table splitting into a single-pass layout algorithm to prevent alignment drifts.
+- **Zero `@ts-ignore` Strict Compliance**: Implemented robust TS interfaces extending jsPDF (`jsPDFExtension`, `PdfPage`, `PdfDrawState`) to eliminate all TS ignore statements from the repository.
+
+### 📚 Documentation & Demo Upgrades
+- Added dedicated components references for `<PdfSpan>` and `<PdfSvg>` in `README.md`.
+- Implemented SSR, Spacing boundaries, and inline spans documentation inside the application's live tab (`DocsContent.tsx`).
+- Created a beautifully styled interactive showcase in the builder featuring multi-column flex rows, debug overlays, clickable hyperlinks, inline styles, and SVG stars right on initial load.
+
 ## [0.6.1] - 2025-12-26
 
 ### ✨ New Features

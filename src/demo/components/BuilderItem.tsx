@@ -38,6 +38,8 @@ export const BuilderItem: React.FC<BuilderItemProps> = ({
         return <TableItemEditor {...commonProps} />;
       case "view":
         return <ViewItemEditor {...commonProps} />;
+      case "svg":
+        return <div className="text-gray-500 italic p-2 col-span-3 text-sm">Vector SVG Shape (Pre-populated Star illustration).</div>;
       default:
         return null;
     }

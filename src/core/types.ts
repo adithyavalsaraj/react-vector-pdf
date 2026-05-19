@@ -1,5 +1,25 @@
+import { jsPDF } from "jspdf";
+
+declare module "jspdf" {
+  interface jsPDF {
+    saveGraphicsState(): void;
+    restoreGraphicsState(): void;
+    setLineDashPattern(pattern: number[], start: number): void;
+    addFileToVFS(filename: string, content: string): void;
+    addFont(filename: string, fontName: string, fontStyle: string): void;
+    link(x: number, y: number, w: number, h: number, options: { url: string }): void;
+    splitTextToSize(text: string, maxlen: number, options?: any): string[];
+  }
+}
+
 export type PDFFormat = "a4" | "letter" | [number, number]; // mm
 export type Align = "left" | "center" | "right" | "justify";
+
+export interface CustomFont {
+  name: string;
+  src: string;
+  style?: "normal" | "bold" | "italic" | "bolditalic";
+}
 
 export interface PDFOptions {
   format?: PDFFormat;
@@ -11,11 +31,13 @@ export interface PDFOptions {
     style?: "normal" | "bold" | "italic" | "bolditalic";
     size?: number;
   };
+  customFonts?: CustomFont[];
   color?: string; // hex like '#111'
   lineHeight?: number; // multiplier, e.g., 1.2
 }
 
 export interface TextStyle {
+  fontName?: string;
   fontSize?: number;
   fontStyle?: "normal" | "bold" | "italic" | "bolditalic";
   color?: string;
@@ -24,6 +46,7 @@ export interface TextStyle {
   lineHeight?: number;
   showInAllPages?: boolean;
   scope?: "all" | "first-only" | "except-first" | number[];
+  link?: string;
 }
 
 export interface BoxStyle {
@@ -42,6 +65,7 @@ export interface BoxStyle {
 }
 
 export interface ViewStyle extends BoxStyle {
+  flexDirection?: "row" | "column";
   margin?:
     | number
     | { top?: number; right?: number; bottom?: number; left?: number };

@@ -5,6 +5,7 @@ import {
   PdfTable,
   PdfText,
   PdfView,
+  PdfSvg,
 } from "../../components";
 import { PdfItem } from "../types";
 
@@ -103,6 +104,18 @@ export const DemoPdfContent: React.FC<DemoPdfContentProps> = ({
           >
             {viewChild}
           </PdfView>
+        );
+      case "svg":
+        return (
+          <PdfSvg
+            key={item.id}
+            w={item.props.width ?? 30}
+            h={item.props.height ?? 30}
+            {...common}
+            className="mb-4"
+          >
+            {item.props.children}
+          </PdfSvg>
         );
       default:
         return null;

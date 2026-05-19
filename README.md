@@ -9,15 +9,20 @@
 ## Features
 
 - **Vector Text**: High-quality, selectable, and searchable text (no canvas rasterization).
-- **React Component API**: Build PDFs using declarative components like `<PdfDocument>`, `<PdfText>`, `<PdfTable>`, `<PdfView>`, etc.
+- **React Component API**: Build PDFs using declarative components like `<PdfDocument>`, `<PdfText>`, `<PdfTable>`, `<PdfView>`, `<PdfSvg>`, and `<PdfSpan>`.
 - **Smart Layout Engine**:
   - **Auto-Paging**: Content that exceeds the page height automatically moves to the next page.
   - **Flow & Absolute Positioning**: Stack elements naturally or place them at fixed coordinates.
+  - **Flexbox Grid Rows**: Define standard flex layouts (`flex flex-row gap-*`) to stack sibling containers side-by-side.
 - **Advanced Components**:
-  - **PdfTable**: Supports auto-wrapping, **row spans**, **col spans**, **vertical alignment**, custom cell styling, **striped rows**, and **intelligent page breaking** (keeps spanned rows together).
-  - **PdfImage**: Renders images from URLs with options for flow or absolute positioning. Automatically handles page breaks in flow mode.
+  - **PdfSpan**: Inline styled spans that let you mix italics, bold, colors, and active clickable hyperlinks in single paragraphs.
+  - **PdfSvg**: Natively parses SVG child shapes (lines, rects, circles, polygons, and complex paths) directly into the vector stream.
+  - **PdfTable**: Supports auto-wrapping, **row spans**, **col spans**, **vertical alignment**, custom cell styling, **striped rows**, and **unified single-pass geometry breaking**.
+  - **PdfImage**: Renders images from URLs/Base64, handling aspect ratio scaling and automatic multi-page flow.
   - **PdfList**: Bullet and numbered lists with auto-wrapping and **orphan protection**.
-  - **PdfView**: Advanced container with **perfect multi-page spanning**, support for borders, background colors (rendered strictly behind content), and granular **persistent padding** (padding is maintained across page breaks).
+  - **PdfView**: Advanced container with **perfect multi-page spanning**, support for borders, background colors, and granular **persistent padding**. Includes spacing overlays (`debug={true}`) showing margins (dotted red), paddings (solid green), and content bounds (dashed blue).
+- **Custom TTF Fonts**: Registers custom TrueType Font streams asynchronously inside the jsPDF VFS, supporting bespoke branding instantly.
+- **Server-Side Rendering (SSR) & Server Support**: Fully decoupled style calculation fallback that continues rendering without window or browser dependencies (perfect for Next.js API routes or pure Node.js processes).
 - **Global Document Options**:
   - **Formatting**: A4, Letter, custom sizes, portrait/landscape orientation, distinct margins, base fonts.
   - **Headers & Footers**: Custom render functions with full control.
@@ -371,6 +376,41 @@ Renders bulleted or numbered lists.
   spacing={3}
   items={["First item", "Second item", "Third item"]}
 />
+```
+
+### 7. `PdfSpan`
+
+Renders styled inline rich text within standard paragraphs. Fully supports nesting individual spans with specific fonts, sizes, weights, and clickable overlays.
+
+**Props:**
+
+- `fontSize` (number): Custom inline font size.
+- `fontStyle` ('normal' | 'bold' | 'italic' | 'bolditalic'): Custom inline font style.
+- `color` (string): Custom inline color.
+- `link` (string): Active URL hyperlink.
+
+```tsx
+<PdfText fontSize={12}>
+  This is standard text, <PdfSpan fontStyle="bold" color="#1e3a8a">bold blue inline text</PdfSpan>, and a <PdfSpan color="#2563eb" link="https://google.com">clickable link</PdfSpan> inside the paragraph!
+</PdfText>
+```
+
+### 8. `PdfSvg`
+
+Renders lightweight scalable vector graphics (SVGs) natively into the PDF. Parses path segments, circles, lines, rects, polylines, and polygons.
+
+**Props:**
+
+- `width` (number): SVG width in millimeters.
+- `height` (number): SVG height in millimeters.
+- `children`: Standard HTML SVG markup.
+
+```tsx
+<PdfSvg width={30} height={30}>
+  <svg viewBox="0 0 24 24">
+    <path d="M12 2L2 22h20L12 2z" fill="#f59e0b" />
+  </svg>
+</PdfSvg>
 ```
 
 ## Global Document Features
