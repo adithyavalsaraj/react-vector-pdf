@@ -54,6 +54,8 @@ export interface DemoPdfProps {
   headerFontSize: string;
   headerBorder: boolean;
   headerBorderColor: string;
+  headerScope: "all" | "first-only" | "except-first" | "custom";
+  headerCustomPages: string;
   // Footer Props
   footerEnabled: boolean;
   footerText: string;
@@ -62,6 +64,8 @@ export interface DemoPdfProps {
   footerFontSize: string;
   footerBorder: boolean;
   footerBorderColor: string;
+  footerScope: "all" | "first-only" | "except-first" | "custom";
+  footerCustomPages: string;
 }
 
 export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
@@ -107,6 +111,8 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
   headerFontSize,
   headerBorder,
   headerBorderColor,
+  headerScope,
+  headerCustomPages,
   footerEnabled,
   footerText,
   footerAlign,
@@ -114,9 +120,13 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
   footerFontSize,
   footerBorder,
   footerBorderColor,
+  footerScope,
+  footerCustomPages,
 }) => {
   const pnScopeVal = pnScope === "custom" ? parsePages(pnCustomPages) : pnScope;
   const clScopeVal = clScope === "custom" ? parsePages(clCustomPages) : clScope;
+  const headerScopeVal = headerScope === "custom" ? parsePages(headerCustomPages) : headerScope;
+  const footerScopeVal = footerScope === "custom" ? parsePages(footerCustomPages) : footerScope;
 
   const headerRenderer = createHeaderRenderer({
     enabled: headerEnabled,
@@ -126,6 +136,7 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
     fontSize: headerFontSize,
     border: headerBorder,
     borderColor: headerBorderColor,
+    scope: headerScopeVal as any,
   });
 
   const footerRenderer = createFooterRenderer({
@@ -136,6 +147,7 @@ export const DemoPdfDocument: React.FC<DemoPdfProps> = ({
     fontSize: footerFontSize,
     border: footerBorder,
     borderColor: footerBorderColor,
+    scope: footerScopeVal as any,
   });
 
   return (

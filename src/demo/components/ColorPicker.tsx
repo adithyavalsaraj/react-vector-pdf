@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export interface ColorPickerProps {
   label: string;
@@ -11,8 +12,10 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   value,
   onChange,
 }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
 
   const parseValue = (val?: string) => {
     if (!val) return { hex: "#000000", alpha: 1 };
@@ -27,11 +30,38 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const { hex, alpha } = parseValue(value);
 
-  React.useEffect(() => {
+  // Position calculation
+  useEffect(() => {
+    if (isOpen && containerRef.current && popupRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const popupRect = popupRef.current.getBoundingClientRect();
+      
+      let top = rect.bottom + window.scrollY + 4;
+      let left = rect.left + window.scrollX;
+
+      // Check vertical space (bottom)
+      if (rect.bottom + popupRect.height + 10 > window.innerHeight) {
+        // Render above if not enough space below
+        top = rect.top + window.scrollY - popupRect.height - 4;
+      }
+
+      // Check horizontal space (right)
+      if (left + popupRect.width + 10 > window.innerWidth) {
+        // Shift left
+        left = window.innerWidth - popupRect.width - 10;
+      }
+
+      setCoords({ top, left });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        popupRef.current &&
+        !popupRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -56,6 +86,66 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     onChange(hex + aa);
   };
 
+  const popupContent = (
+    <div
+      ref={popupRef}
+      className="card vstack gap-3 shadow-lg p-3 bg-white border w-52"
+      style={{
+        position: "absolute",
+        top: coords.top,
+        left: coords.left,
+        zIndex: 99999, // Ensure it's on top of everything
+        visibility: coords.top === 0 ? "hidden" : "visible", // Hide until positioned
+      }}
+    >
+      <div className="hstack justify-between">
+        <span className="text-xs font-bold">Picker</span>
+        <label className="hstack gap-1 text-xs cursor-pointer m-0">
+          <input
+            type="checkbox"
+            checked={!value}
+            onChange={(e) =>
+              onChange(e.target.checked ? undefined : hex + "ff")
+            }
+          />
+          None
+        </label>
+      </div>
+
+      {!value ? (
+        <div className="vstack border-dashed rounded-md h-24 items-center justify-center text-muted text-xs">
+          Inherited / None
+        </div>
+      ) : (
+        <div className="vstack gap-3">
+          <input
+            type="color"
+            className="w-full cursor-pointer h-9 p-0 border-none"
+            value={hex}
+            onChange={(e) => handleHexChange(e.target.value)}
+          />
+          <div className="vstack gap-1">
+            <div className="hstack justify-between">
+              <label className="text-xs m-0">Opacity</label>
+              <span className="text-xs">{Math.round(alpha * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              className="cursor-pointer"
+              min="0"
+              max="1"
+              step="0.01"
+              value={alpha}
+              onChange={(e) =>
+                handleAlphaChange(parseFloat(e.target.value))
+              }
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="control relative" ref={containerRef}>
       <label>{label}</label>
@@ -78,55 +168,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         </span>
       </div>
 
-      {isOpen && (
-        <div className="card vstack gap-3 shadow-lg absolute top-full left-0 z-max mt-1 p-3 bg-white border w-52">
-          <div className="hstack justify-between">
-            <span className="text-xs font-bold">Picker</span>
-            <label className="hstack gap-1 text-xs cursor-pointer m-0">
-              <input
-                type="checkbox"
-                checked={!value}
-                onChange={(e) =>
-                  onChange(e.target.checked ? undefined : hex + "ff")
-                }
-              />
-              None
-            </label>
-          </div>
-
-          {!value ? (
-            <div className="vstack border-dashed rounded-md h-24 items-center justify-center text-muted text-xs">
-              Inherited / None
-            </div>
-          ) : (
-            <div className="vstack gap-3">
-              <input
-                type="color"
-                className="w-full cursor-pointer h-9 p-0 border-none"
-                value={hex}
-                onChange={(e) => handleHexChange(e.target.value)}
-              />
-              <div className="vstack gap-1">
-                <div className="hstack justify-between">
-                  <label className="text-xs m-0">Opacity</label>
-                  <span className="text-xs">{Math.round(alpha * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="cursor-pointer"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={alpha}
-                  onChange={(e) =>
-                    handleAlphaChange(parseFloat(e.target.value))
-                  }
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {isOpen && typeof document !== "undefined"
+        ? createPortal(popupContent, document.body)
+        : null}
     </div>
   );
 };

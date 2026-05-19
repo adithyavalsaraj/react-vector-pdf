@@ -290,7 +290,8 @@ export function useClassStyles(
     const fontFamily = computed.fontFamily;
     if (fontFamily) {
       const cleanFont = fontFamily.split(",")[0].trim().replace(/['"]/g, "");
-      if (cleanFont && cleanFont !== "sans-serif" && cleanFont !== "serif" && cleanFont !== "monospace") {
+      // Only inject standard standard fonts into jsPDF, otherwise let it fall back to default
+      if (cleanFont === "helvetica" || cleanFont === "times" || cleanFont === "courier") {
         res.fontName = cleanFont;
       }
     }

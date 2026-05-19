@@ -120,6 +120,9 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       const after = pdf.getCursor();
       const startPage = viewState.start!.page ?? endPage;
 
+      // Box X coordinate needs to respect row context columns
+      const boxX = (viewState as any).colX !== undefined ? (viewState as any).colX : start.x;
+
       // Draw Box (Background/Borders)
       for (let p = startPage; p <= endPage; p++) {
         pdf.instance.setPage(p);
@@ -175,7 +178,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
             inst.saveGraphicsState();
           }
 
-          const rx = Math.max(start.x, pdf.margin.left);
+          const rx = Math.max(boxX, pdf.margin.left);
           const ry = drawY;
           const rw = boxWidthWithPadding;
           const rh = drawH;
@@ -226,7 +229,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
           const rgb = hexToRgb(color);
           if (rgb) inst.setDrawColor(rgb[0], rgb[1], rgb[2]);
 
-          const gx = Math.max(start.x, pdf.margin.left);
+          const gx = Math.max(boxX, pdf.margin.left);
           const gy = drawY;
           const gw = boxWidthWithPadding;
           const gh = drawH;
@@ -342,7 +345,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
 
         // Draw Background (Inject Fill Behind)
         if (style.fillColor) {
-          const rectX = Math.max(start.x, pdf.margin.left);
+          const rectX = Math.max(boxX, pdf.margin.left);
           const rectY = drawY;
           const rectW = boxWidthWithPadding;
           const rectH = drawH;
@@ -385,7 +388,7 @@ export const PdfViewFinisher: React.FC<PdfViewFinisherProps> = ({
       if (style.showInAllPages) {
         const recurringDraw = () => {
           const rH = style.height ?? 20;
-          pdf.box(start.x, start.y, boxW, rH, style);
+          pdf.box(boxX, start.y, boxW, rH, style);
         };
         pdf.registerRecurringItem({
           draw: recurringDraw,

@@ -85,12 +85,7 @@ export const PdfText: React.FC<PdfTextProps> = ({
                     .split(",")[0]
                     .trim()
                     .replace(/['"]/g, "");
-                  if (
-                    clean &&
-                    clean !== "sans-serif" &&
-                    clean !== "serif" &&
-                    clean !== "monospace"
-                  ) {
+                  if (clean === "helvetica" || clean === "times" || clean === "courier") {
                     return clean;
                   }
                   return undefined;
@@ -197,6 +192,8 @@ export const PdfText: React.FC<PdfTextProps> = ({
         visibility: "hidden",
         pointerEvents: "none",
       }}
-    />
+    >
+      {children}
+    </div>
   );
 };

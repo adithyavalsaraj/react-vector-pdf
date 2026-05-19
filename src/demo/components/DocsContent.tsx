@@ -13,7 +13,7 @@ export const DocsContent: React.FC = () => {
       </p>
       <div className="hr"></div>
 
-      <h3>Features</h3>
+      <h3 id="features">Features</h3>
       <ul className="list-disc">
         <li>
           <strong>Vector Text</strong>: High-quality, selectable, and searchable
@@ -45,9 +45,9 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
-      <h3>Components Reference</h3>
+      <h3 id="components">Components Reference</h3>
 
-      <h4>1. PdfDocument</h4>
+      <h4 id="pdfdocument">1. PdfDocument</h4>
       <p>
         The main wrapper component that provides context and handles PDF
         generation.
@@ -75,7 +75,7 @@ export const DocsContent: React.FC = () => {
         </li>
       </ul>
 
-      <h4>2. PdfText</h4>
+      <h4 id="pdftext">2. PdfText</h4>
       <p>Renders a paragraph of text with automatic wrapping.</p>
       <ul className="list-disc">
         <li>
@@ -120,7 +120,7 @@ export const DocsContent: React.FC = () => {
 </PdfText>`}
       />
 
-      <h4>3. PdfPreview</h4>
+      <h4 id="pdfpreview">3. PdfPreview</h4>
       <p>
         Embeds a PDF preview iframe. Automatically updates when props change.
       </p>
@@ -130,7 +130,7 @@ export const DocsContent: React.FC = () => {
 </PdfPreview>`}
       />
 
-      <h4>4. PdfTable</h4>
+      <h4 id="pdftable">4. PdfTable</h4>
       <p>Robust table with spanning, striping, and smart breaking.</p>
       <ul className="list-disc">
         <li>
@@ -179,7 +179,7 @@ export const DocsContent: React.FC = () => {
 />`}
       />
 
-      <h4>5. PdfList</h4>
+      <h4 id="pdflist">5. PdfList</h4>
       <p>Renders bullet or numbered lists.</p>
       <ul className="list-disc">
         <li>
@@ -205,7 +205,7 @@ export const DocsContent: React.FC = () => {
 />`}
       />
 
-      <h4>6. PdfImage</h4>
+      <h4 id="pdfimage">6. PdfImage</h4>
       <p>Embed images with flow or absolute positioning.</p>
       <ul className="list-disc">
         <li>
@@ -255,7 +255,7 @@ export const DocsContent: React.FC = () => {
 />`}
       />
 
-      <h4>7. PdfView</h4>
+      <h4 id="pdfview">7. PdfView</h4>
       <p>
         A container component for grouping content and adding backgrounds or
         borders. Supports both <strong>flow layout</strong> (automatic) and
@@ -285,16 +285,19 @@ export const DocsContent: React.FC = () => {
 </PdfView>`}
       />
 
-      <h4>8. PdfSpan</h4>
+      <h4 id="pdfspan">8. PdfSpan</h4>
       <p>
-        Renders styled inline rich text within standard paragraphs. Fully supports nesting individual spans with specific fonts, sizes, weights, and clickable overlays.
+        Renders styled inline rich text within standard paragraphs. Fully
+        supports nesting individual spans with specific fonts, sizes, weights,
+        and clickable overlays.
       </p>
       <ul className="list-disc">
         <li>
           <code>fontSize</code> (number): Custom inline font size.
         </li>
         <li>
-          <code>fontStyle</code> ('normal' | 'bold' | 'italic' | 'bolditalic'): Custom inline font style.
+          <code>fontStyle</code> ('normal' | 'bold' | 'italic' | 'bolditalic'):
+          Custom inline font style.
         </li>
         <li>
           <code>color</code> (string): Custom inline color.
@@ -309,9 +312,11 @@ export const DocsContent: React.FC = () => {
 </PdfText>`}
       />
 
-      <h4>9. PdfSvg</h4>
+      <h4 id="pdfsvg">9. PdfSvg</h4>
       <p>
-        Renders lightweight scalable vector graphics (SVGs) natively into the PDF. Parses path segments, circles, lines, rects, polylines, and polygons.
+        Renders lightweight scalable vector graphics (SVGs) natively into the
+        PDF. Parses path segments, circles, lines, rects, polylines, and
+        polygons.
       </p>
       <ul className="list-disc">
         <li>
@@ -334,19 +339,25 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
-      <h3>Debug Spacing Overlays</h3>
+      <h3 id="debug-spacing">Debug Spacing Overlays</h3>
       <p>
-        To inspect document bounds, margins, paddings, and alignment grids visually, you can pass the <code>debug={`{true}`}</code> prop to any <code>&lt;PdfView&gt;</code>, <code>&lt;PdfText&gt;</code>, or <code>&lt;PdfTable&gt;</code> component.
+        To inspect document bounds, margins, paddings, and alignment grids
+        visually, you can pass the <code>debug={`{true}`}</code> prop to any{" "}
+        <code>&lt;PdfView&gt;</code>, <code>&lt;PdfText&gt;</code>, or{" "}
+        <code>&lt;PdfTable&gt;</code> component.
       </p>
       <ul className="list-disc">
         <li>
-          <strong style={{ color: "red" }}>Red Dotted Line</strong>: Represents the element's margins (outer boundary).
+          <strong style={{ color: "red" }}>Red Dotted Line</strong>: Represents
+          the element's margins (outer boundary).
         </li>
         <li>
-          <strong style={{ color: "green" }}>Green Solid Line</strong>: Represents the element's border box and paddings.
+          <strong style={{ color: "green" }}>Green Solid Line</strong>:
+          Represents the element's border box and paddings.
         </li>
         <li>
-          <strong style={{ color: "blue" }}>Blue Dashed Line</strong>: Represents the active children/text content zone.
+          <strong style={{ color: "blue" }}>Blue Dashed Line</strong>:
+          Represents the active children/text content zone.
         </li>
       </ul>
       <CodeBlock
@@ -357,7 +368,7 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
-      <h3>Styling with CSS Classes</h3>
+      <h3 id="css-classes">Styling with CSS Classes</h3>
       <p>
         You can now use standard CSS classes (including generic CSS or utility
         frameworks like Tailwind CSS) using the <code>className</code> prop.
@@ -391,7 +402,7 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
-      <h3>Global Document Props</h3>
+      <h3 id="global-props">Global Document Props</h3>
       <p>
         Props passed to <code>&lt;PdfDocument&gt;</code>.
       </p>
@@ -501,9 +512,9 @@ export const DocsContent: React.FC = () => {
 
       <div className="hr"></div>
 
-      <h3>Advanced Features</h3>
+      <h3 id="advanced">Advanced Features</h3>
 
-      <h4>Recurring Items</h4>
+      <h4 id="recurring">Recurring Items</h4>
       <p>Make any component appear on multiple pages:</p>
       <CodeBlock
         code={`{/* Appear on all pages */}
@@ -527,7 +538,7 @@ export const DocsContent: React.FC = () => {
 </PdfText>`}
       />
 
-      <h4>RGBA Color Support</h4>
+      <h4 id="rgba">RGBA Color Support</h4>
       <p>All color props support both hex and RGBA formats:</p>
       <CodeBlock
         code={`<PdfText color="#FF0000">Red text</PdfText>
@@ -538,7 +549,7 @@ export const DocsContent: React.FC = () => {
 </PdfView>`}
       />
 
-      <h4>Auto-Save</h4>
+      <h4 id="auto-save">Auto-Save</h4>
       <p>Automatically save the PDF when it's generated:</p>
       <CodeBlock
         code={`<PdfDocument
@@ -549,14 +560,67 @@ export const DocsContent: React.FC = () => {
 </PdfDocument>`}
       />
 
-      <h4>Server-Side Rendering (SSR) & Server Support</h4>
+      <h4 id="custom-export">Custom Programmatic PDF Exporter</h4>
       <p>
-        The engine is fully decoupled from the DOM. If running inside a server-side framework (e.g. Next.js API routes, Remix loader, or Node.js server action) where <code>window</code> and the DOM are absent, the style parsing fallback engine automatically resolves CSS classes inline and continues drawing perfectly.
+        To build a custom export/download button in your parent application that
+        triggers a programmatic compilation producing outputs{" "}
+        <strong>exactly identical</strong> to the live preview canvas, mount a
+        hidden <code>&lt;PdfDocument&gt;</code> instance dynamically and invoke{" "}
+        <code>renderer.save()</code> on the <code>onReady</code> callback:
       </p>
+      <CodeBlock
+        code={`import React, { useState } from "react";
+import { PdfDocument, PdfText, PdfRenderer } from "react-vector-pdf";
 
-      <div className="hr"></div>
+export const CustomExportApp = () => {
+  const [downloading, setDownloading] = useState(false);
+  const [triggerExport, setTriggerExport] = useState(false);
 
-      <h3>TypeScript Support</h3>
+  const handleDownload = () => {
+    setDownloading(true);
+    setTriggerExport(true);
+  };
+
+  const handlePdfReady = (renderer: PdfRenderer) => {
+    // 1. Programmatically trigger the PDF download
+    renderer.save("production-report.pdf");
+    
+    // 2. Unmount the programmatic compiler and clear loading state
+    setTriggerExport(false);
+    setDownloading(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Custom Trigger Button */}
+      <button 
+        onClick={handleDownload}
+        disabled={downloading}
+        className="px-4 py-2 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-700 transition"
+      >
+        {downloading ? "Compiling PDF..." : "Export Custom Production PDF"}
+      </button>
+
+      {/* Programmatic Invisible Exporter */}
+      {triggerExport && (
+        <div style={{ display: "none" }}>
+          <PdfDocument 
+            autoSave={false} 
+            filename="production-report.pdf" 
+            onReady={handlePdfReady}
+          >
+            <PdfText fontSize={18} fontStyle="bold">
+              Identical high-fidelity vector content goes here!
+            </PdfText>
+          </PdfDocument>
+        </div>
+      )}
+    </div>
+  );
+};`}
+      />
+
+      <h3 id="typescript">TypeScript Support</h3>
       <p>
         This library is written in TypeScript and includes complete type
         definitions. All components and props are fully typed for the best

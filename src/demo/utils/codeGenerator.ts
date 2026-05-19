@@ -64,9 +64,14 @@ export const generateReactCode = (
         showInAllPages,
         scope,
         className,
+        children,
         // Item specific props to handle separately
         ...restProps
       } = item.props as any;
+
+      if (typeof children === "string") {
+        restProps.children = children;
+      }
 
       let propsString = JSON.stringify(restProps, null, 2);
 

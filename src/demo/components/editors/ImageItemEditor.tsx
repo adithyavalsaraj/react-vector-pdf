@@ -10,37 +10,33 @@ export const ImageItemEditor: React.FC<ImageItemEditorProps> = ({
   onChange,
 }) => {
   return (
-    <>
-      <div className="control col-span-3">
-        <label className="font-bold mb-2 block">Image Configuration</label>
-      </div>
-
-      <div className="grid grid-2 gap-2 col-span-3">
-        {/* ClassName */}
-        <div className="control col-span-2">
-          <label>CSS Class</label>
+    <div className="editor-group-container">
+      <div className="editor-row gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Image URL / Data URI</label>
+          <input
+            type="text"
+            value={props.src || ""}
+            onChange={(e) => onChange({ src: e.target.value })}
+            placeholder="https://example.com/image.png"
+            className="premium-input"
+          />
+        </div>
+        <div className="editor-field flex-1">
+          <label className="editor-label">CSS Class Utilities</label>
           <input
             type="text"
             value={props.className || ""}
             onChange={(e) => onChange({ className: e.target.value })}
-            placeholder="e.g. mb-4 rounded"
-            className="input-sm"
+            placeholder="e.g., rounded shadow mb-4"
+            className="premium-input"
           />
         </div>
+      </div>
 
-        {/* Image Source */}
-        <div className="control col-span-2">
-          <label>Image URL</label>
-          <input
-            value={props.src}
-            onChange={(e) => onChange({ src: e.target.value })}
-            className="input-sm"
-          />
-        </div>
-
-        {/* Dimensions */}
-        <div className="control">
-          <label>Width (mm)</label>
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Width (mm)</label>
           <input
             type="number"
             min="0"
@@ -50,12 +46,11 @@ export const ImageItemEditor: React.FC<ImageItemEditorProps> = ({
               const val = e.target.value;
               onChange({ w: val ? Math.max(0, Number(val)) : undefined });
             }}
-            className="input-sm"
+            className="premium-input"
           />
         </div>
-
-        <div className="control">
-          <label>Height (mm)</label>
+        <div className="editor-field flex-1">
+          <label className="editor-label">Height (mm)</label>
           <input
             type="number"
             min="0"
@@ -65,38 +60,37 @@ export const ImageItemEditor: React.FC<ImageItemEditorProps> = ({
               const val = e.target.value;
               onChange({ h: val ? Math.max(0, Number(val)) : undefined });
             }}
-            className="input-sm"
+            className="premium-input"
           />
         </div>
+      </div>
 
-        {/* Alignment */}
-        <div className="control">
-          <label>Alignment</label>
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Horizontal Alignment</label>
           <select
             value={props.align || "left"}
             onChange={(e) => onChange({ align: e.target.value })}
-            className="select-sm"
+            className="premium-select"
           >
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
+            <option value="left">Left-aligned</option>
+            <option value="center">Centered</option>
+            <option value="right">Right-aligned</option>
           </select>
         </div>
-
-        {/* Advanced Layout (Simplified) */}
-        <div className="control">
-          <label>Behavior</label>
+        <div className="editor-field flex-1">
+          <label className="editor-label">Sizing Behavior</label>
           <select
             value={props.sizing || "auto"}
             onChange={(e) => onChange({ sizing: e.target.value })}
-            className="select-sm"
+            className="premium-select"
           >
-            <option value="auto">Natural Size</option>
-            <option value="fit">Fit Container</option>
-            <option value="fill">Fill Width</option>
+            <option value="auto">Natural aspect-ratio</option>
+            <option value="fit">Fit aspect to container</option>
+            <option value="fill">Stretched to full width</option>
           </select>
         </div>
       </div>
-    </>
+    </div>
   );
 };

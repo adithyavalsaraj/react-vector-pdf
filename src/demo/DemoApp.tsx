@@ -8,13 +8,7 @@ import { DemoPdfContent } from "./components/DemoPdfContent";
 import { DocsContent } from "./components/DocsContent";
 import { Tabs } from "./components/Tabs";
 import { ViewToggle } from "./components/ViewToggle";
-import { CenterLabelSettings } from "./components/settings/CenterLabelSettings";
-import { FooterSettings } from "./components/settings/FooterSettings";
-import { GlobalSettings } from "./components/settings/GlobalSettings";
-import { HeaderSettings } from "./components/settings/HeaderSettings";
-import { ImageSettings } from "./components/settings/ImageSettings";
-import { PageNumberSettings } from "./components/settings/PageNumberSettings";
-import { TableSettings } from "./components/settings/TableSettings";
+import { SettingsPanel } from "./components/settings/SettingsPanel";
 import { useDemoApp } from "./hooks/useDemoApp";
 import { generateReactCode } from "./utils/codeGenerator";
 import {
@@ -94,7 +88,7 @@ export const DemoApp: React.FC = () => {
     tableHeaderColor,
     setTableHeaderColor,
 
-    // New State
+    // Metadata
     metadata,
     setMetadata,
     layout,
@@ -108,6 +102,7 @@ export const DemoApp: React.FC = () => {
     autoSave,
     setAutoSave,
 
+    // Builder state
     items,
     setItems,
     addItem,
@@ -115,6 +110,8 @@ export const DemoApp: React.FC = () => {
     updateItem,
     updateItemProps,
     clearAllItems,
+
+    // Header & Footer settings
     headerEnabled,
     setHeaderEnabled,
     headerText,
@@ -155,20 +152,13 @@ export const DemoApp: React.FC = () => {
     setFilename,
   } = useDemoApp();
 
-  /* 
-    Updated Logic:
-    - 'preview' mode automatically updates via useEffect in useDemoApp (if we set it up that way) or we can manually trigger it.
-    - 'code' mode just renders the string.
-    - 'download' action is now explicit via button click, regardless of current view mode.
-  */
-  const handleGenerate = () => {
-    // Always trigger download when this function is called (since it's attached to the "Download PDF" button)
+  const handleDownloadPdf = () => {
     setDownloading(true);
     setTimeout(() => {
       const fname = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
-      const save = (r: any) => r.save(fname);
+      const save = (renderer: any) => renderer.save(fname);
 
-      const Root: React.FC = () => (
+      const RootDoc: React.FC = () => (
         <DemoPdfDocument
           metadata={metadata}
           layout={layout}
@@ -211,6 +201,8 @@ export const DemoApp: React.FC = () => {
           headerFontSize={headerFontSize}
           headerBorder={headerBorder}
           headerBorderColor={headerBorderColor}
+          headerScope={headerScope}
+          headerCustomPages={headerCustomPages}
           footerEnabled={footerEnabled}
           footerText={footerText}
           footerAlign={footerAlign}
@@ -218,30 +210,40 @@ export const DemoApp: React.FC = () => {
           footerFontSize={footerFontSize}
           footerBorder={footerBorder}
           footerBorderColor={footerBorderColor}
+          footerScope={footerScope}
+          footerCustomPages={footerCustomPages}
         />
       );
 
-      const temp = document.createElement("div");
-      document.body.appendChild(temp);
+      const tempContainer = document.createElement("div");
+      document.body.appendChild(tempContainer);
       import("react-dom/client").then(({ createRoot }) => {
-        const root = createRoot(temp);
-        root.render(<Root />);
+        const root = createRoot(tempContainer);
+        root.render(<RootDoc />);
         setTimeout(() => {
           root.unmount();
-          document.body.removeChild(temp);
+          document.body.removeChild(tempContainer);
           setDownloading(false);
-        }, 100);
+        }, 120);
       });
-    }, 50);
+    }, 60);
   };
+
   const [isStale, setIsStale] = React.useState(false);
+  const [previewKey, setPreviewKey] = React.useState(0);
+  const [sidebarTab, setSidebarTab] = React.useState<"builder" | "settings">(
+    "builder",
+  );
+  const [mobileView, setMobileView] = React.useState<
+    "builder" | "preview" | "code"
+  >("builder");
 
   const buildConfig = () => ({
     autoSave,
     metadata,
     options: {
       margin: margins,
-      format: layout.format === "custom" ? [210, 297] : layout.format, // Simplification for demo
+      format: layout.format === "custom" ? [210, 297] : layout.format,
       orientation: layout.orientation,
       font: { size: typography.fontSize, name: typography.fontName },
       color: baseColor,
@@ -255,6 +257,9 @@ export const DemoApp: React.FC = () => {
       fontSize: headerFontSize,
       border: headerBorder,
       borderColor: headerBorderColor,
+      scope: (headerScope === "custom"
+        ? parsePages(headerCustomPages)
+        : headerScope) as any,
     }),
     footer: createFooterRenderer({
       enabled: footerEnabled,
@@ -264,6 +269,9 @@ export const DemoApp: React.FC = () => {
       fontSize: footerFontSize,
       border: footerBorder,
       borderColor: footerBorderColor,
+      scope: (footerScope === "custom"
+        ? parsePages(footerCustomPages)
+        : footerScope) as any,
     }),
     pageNumbers: {
       enabled: pnEnabled,
@@ -303,18 +311,18 @@ export const DemoApp: React.FC = () => {
 
   const handleUpdatePreview = () => {
     setPreviewConfig(buildConfig());
+    setPreviewKey((k) => k + 1);
     setIsStale(false);
   };
 
-  // Effect to keep preview updated when in preview mode
   React.useEffect(() => {
     if (mode === "preview") {
-      if (!previewConfig) {
-        handleUpdatePreview();
-      } else {
-        setIsStale(true);
-      }
+      // Always regenerate immediately on any config change
+      setPreviewConfig(buildConfig());
+      setPreviewKey((k) => k + 1);
+      setIsStale(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mode,
     pnEnabled,
@@ -371,48 +379,24 @@ export const DemoApp: React.FC = () => {
     typography,
     baseColor,
     autoSave,
-    metadata,
-    layout,
-    margins,
-    typography,
-    baseColor,
-    autoSave,
   ]);
 
-  const resetGlobalSettings = () => {
-    // Reset Metadata
+  const resetAllSettings = () => {
     setMetadata({
-      title: "",
-      author: "",
-      subject: "",
+      title: "Document Title",
+      author: "Author",
+      subject: "Subject",
       keywords: "",
     });
-    // Reset Layout
-    setLayout({
-      format: "a4",
-      orientation: "p",
-    });
-    // Reset Margins
-    setMargins({
-      top: 15,
-      right: 15,
-      bottom: 15,
-      left: 15,
-    });
-    // Reset Typography
-    setTypography({
-      fontSize: 12,
-      lineHeight: 1.25,
-      fontName: "helvetica",
-    });
-    // Reset Color & AutoSave
-    setBaseColor("#111827");
+    setLayout({ format: "a4", orientation: "p" });
+    setMargins({ top: 15, right: 15, bottom: 15, left: 15 });
+    setTypography({ fontSize: 11, lineHeight: 1.3, fontName: "helvetica" });
+    setBaseColor("#1e293b");
     setAutoSave(false);
 
-    // Reset Page Numbers
-    setPnEnabled(false);
+    setPnEnabled(true);
     setPnPos("footer");
-    setPnAlign("center");
+    setPnAlign("right");
     setPnPreset("page-slash-total");
     setPnTemplate("");
     setPnFormat("arabic");
@@ -420,10 +404,9 @@ export const DemoApp: React.FC = () => {
     setPnCustomPages("");
     setPnY("");
     setPnOffsetX("");
-    setPnFontSize("");
-    setPnColor("");
+    setPnFontSize("9");
+    setPnColor("#475569");
 
-    // Reset Center Label
     setClEnabled(false);
     setClPos("header");
     setClText("DRAFT");
@@ -431,23 +414,21 @@ export const DemoApp: React.FC = () => {
     setClCustomPages("");
     setClY("");
     setClOffsetX("");
-    setClFontSize("");
-    setClColor("");
+    setClFontSize("9");
+    setClColor("#94a3b8");
 
-    // Reset Header
-    setHeaderEnabled(false);
-    setHeaderText("Right Header Text");
-    setHeaderAlign("right");
-    setHeaderColor("");
-    setHeaderFontSize("");
-    setHeaderBorder(false);
-    setHeaderBorderColor("");
+    setHeaderEnabled(true);
+    setHeaderText("react-vector-pdf Studio");
+    setHeaderAlign("left");
+    setHeaderColor("#1e293b");
+    setHeaderFontSize("9");
+    setHeaderBorder(true);
+    setHeaderBorderColor("#e2e8f0");
     setHeaderScope("all");
     setHeaderCustomPages("");
 
-    // Reset Footer
     setFooterEnabled(false);
-    setFooterText("Left Footer Text");
+    setFooterText("");
     setFooterAlign("left");
     setFooterColor("");
     setFooterFontSize("");
@@ -456,81 +437,226 @@ export const DemoApp: React.FC = () => {
     setFooterScope("all");
     setFooterCustomPages("");
 
-    // Reset Element Settings
     setImgEnabled(false);
     setImgLayout("fixed");
     setImgSizing("fit");
     setTableEnabled(false);
     setTableStriped(false);
-    setTableBorderWidth("0.2");
+    setTableBorderWidth("0.1");
     setTableHeaderColor("");
-
-    // Reset Filename
-    setFilename("document.pdf");
+    setFilename("react-vector-pdf-spec");
   };
 
-  // Fixed full height layout
-  return (
-    <div className="demo-wrap h-screen flex flex-col overflow-hidden">
-      {/* HEADER & TABS */}
-      <div className="card vstack gap-4 pb-0">
-        <div>
-          <h1 className="text-xl font-bold">
-            react-vector-pdf — Dynamic Builder Demo
-          </h1>
-          <p className="text-sm text-muted">
-            Configure your document layout and content using the builder below.
-          </p>
-        </div>
-        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
+  const codeString = generateReactCode(items, {
+    metadata,
+    layout,
+    margins,
+    typography,
+    baseColor,
+    autoSave,
+    pnEnabled,
+    pnPos,
+    pnAlign,
+    pnScope,
+    pnCustomPages,
+    pnY,
+    pnOffsetX,
+    pnFontSize,
+    pnColor,
+    pnPreset,
+    pnTemplate,
+    pnFormat,
+    clEnabled,
+    clText,
+    clScope,
+    clCustomPages,
+    clY,
+    clOffsetX,
+    clFontSize,
+    clColor,
+    clPos,
+    headerEnabled,
+    headerText,
+    headerAlign,
+    headerColor,
+    headerFontSize,
+    headerBorder,
+    headerBorderColor,
+    footerEnabled,
+    footerText,
+    footerAlign,
+    footerColor,
+    footerFontSize,
+    footerBorder,
+    footerBorderColor,
+    imgLayout,
+    imgSizing,
+    tableStriped,
+    tableBorderWidth,
+    tableHeaderColor,
+  });
 
+  return (
+    <div className="app-wrapper">
+      {/* HEADER COMPONENT */}
+      <header className="app-header shadow-sm">
+        <div className="header-brand">
+          <div className="brand-logo-circle">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="logo-svg"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <div className="brand-meta">
+            <span className="brand-title">react-vector-pdf</span>
+            <span className="brand-subtitle">Design Studio Pro</span>
+          </div>
+        </div>
+
+        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        <div className="header-actions"></div>
+      </header>
+
+      {/* CORE WORKSPACE */}
       {activeTab === "demo" ? (
-        <div className="split-layout">
-          {/* LEFT PANE: BUILDER & SETTINGS */}
-          <div className="pane-left pane-scrollable">
-            <div className="vstack gap-4">
-              <div className="vstack">
-                <div className="hstack justify-between items-center sticky-top py-2">
-                  <h3 className="text-sm font-bold uppercase text-muted m-0">
-                    Content
-                  </h3>
-                  <div className="hstack gap-2">
-                    <BuilderControls
-                      onAddItem={addItem}
-                      onClearAll={clearAllItems}
-                    />
+        <main className={`app-main premium-split mobile-view-${mobileView}`}>
+          {/* Mobile Workspace Toggle Dock */}
+          <div className="mobile-view-tabs">
+            <button
+              className={`mobile-tab-btn ${mobileView === "builder" ? "active" : ""}`}
+              onClick={() => setMobileView("builder")}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+              <span>Controls</span>
+            </button>
+            <button
+              className={`mobile-tab-btn ${mobileView === "preview" ? "active" : ""}`}
+              onClick={() => setMobileView("preview")}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>Live PDF</span>
+            </button>
+            <button
+              className={`mobile-tab-btn ${mobileView === "code" ? "active" : ""}`}
+              onClick={() => setMobileView("code")}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+              <span>React Code</span>
+            </button>
+          </div>
+
+          {/* SIDEBAR EDIT PANEL */}
+          <aside className="pane-sidebar custom-scrollbar">
+            {/* Sidebar Navigation Tabs */}
+            <div className="sidebar-tabs-toggle mb-2">
+              <button
+                className={`sidebar-tab-btn ${sidebarTab === "builder" ? "active" : ""}`}
+                onClick={() => setSidebarTab("builder")}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                <span>Canvas Builder</span>
+              </button>
+              <button
+                className={`sidebar-tab-btn ${sidebarTab === "settings" ? "active" : ""}`}
+                onClick={() => setSidebarTab("settings")}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span>Studio Settings</span>
+              </button>
+            </div>
+
+            {sidebarTab === "builder" ? (
+              <>
+                <div className="sidebar-section">
+                  <div className="section-title-bar">
+                    <h3 className="section-category-title">Canvas Elements</h3>
+                    <span className="section-counter-badge">
+                      {items.length} Blocks
+                    </span>
                   </div>
+                  <BuilderControls
+                    onAddItem={addItem}
+                    onClearAll={clearAllItems}
+                  />
                 </div>
-                {items.length > 0 && (
+
+                <div className="sidebar-section mt-1">
                   <BuilderList
                     items={items}
                     onRemove={removeItem}
                     onUpdate={updateItem}
                     onUpdateProps={updateItemProps}
                   />
-                )}
-              </div>
-
-              <div className="hr"></div>
-
-              <div className="vstack gap-4">
-                <div className="hstack justify-between items-center sticky-top py-2">
-                  <h3 className="text-sm font-bold uppercase text-muted m-0">
-                    Global Settings
-                  </h3>
-                  <button
-                    className="btn btn-sm outline"
-                    onClick={resetGlobalSettings}
-                  >
-                    Clear All
-                  </button>
                 </div>
-
-                <GlobalSettings
+              </>
+            ) : (
+              <div className="sidebar-section">
+                <SettingsPanel
+                  filename={filename}
+                  setFilename={setFilename}
                   metadata={metadata}
                   setMetadata={setMetadata}
-                  layout={layout as any}
+                  layout={layout}
                   setLayout={setLayout}
                   margins={margins}
                   setMargins={setMargins}
@@ -540,166 +666,126 @@ export const DemoApp: React.FC = () => {
                   setBaseColor={setBaseColor}
                   autoSave={autoSave}
                   setAutoSave={setAutoSave}
-                />
-
-                <div className="card p-4 border rounded-md">
-                  <div className="control">
-                    <label htmlFor="filename">Filename</label>
-                    <input
-                      type="text"
-                      id="filename"
-                      value={filename}
-                      onChange={(e) => setFilename(e.target.value)}
-                      className="input-sm"
-                      placeholder="e.g. document.pdf"
-                    />
-                  </div>
-                </div>
-
-                <HeaderSettings
-                  enabled={headerEnabled}
-                  setEnabled={setHeaderEnabled}
-                  text={headerText}
-                  setText={setHeaderText}
-                  align={headerAlign}
-                  setAlign={setHeaderAlign}
-                  color={headerColor}
-                  setColor={setHeaderColor}
-                  fontSize={headerFontSize}
-                  setFontSize={setHeaderFontSize}
-                  border={headerBorder}
-                  setBorder={setHeaderBorder}
-                  borderColor={headerBorderColor}
-                  setBorderColor={setHeaderBorderColor}
-                  scope={headerScope}
-                  setScope={setHeaderScope}
-                  customPages={headerCustomPages}
-                  setCustomPages={setHeaderCustomPages}
-                />
-
-                <FooterSettings
-                  enabled={footerEnabled}
-                  setEnabled={setFooterEnabled}
-                  text={footerText}
-                  setText={setFooterText}
-                  align={footerAlign}
-                  setAlign={setFooterAlign}
-                  color={footerColor}
-                  setColor={setFooterColor}
-                  fontSize={footerFontSize}
-                  setFontSize={setFooterFontSize}
-                  border={footerBorder}
-                  setBorder={setFooterBorder}
-                  borderColor={footerBorderColor}
-                  setBorderColor={setFooterBorderColor}
-                  scope={footerScope}
-                  setScope={setFooterScope}
-                  customPages={footerCustomPages}
-                  setCustomPages={setFooterCustomPages}
-                />
-
-                <PageNumberSettings
-                  enabled={pnEnabled}
-                  setEnabled={setPnEnabled}
-                  pos={pnPos}
-                  setPos={setPnPos}
-                  align={pnAlign}
-                  setAlign={setPnAlign}
-                  preset={pnPreset}
-                  setPreset={setPnPreset}
-                  template={pnTemplate}
-                  setTemplate={setPnTemplate}
-                  format={pnFormat}
-                  setFormat={setPnFormat}
-                  scope={pnScope}
-                  setScope={setPnScope}
-                  customPages={pnCustomPages}
-                  setCustomPages={setPnCustomPages}
-                  y={pnY}
-                  setY={setPnY}
-                  offsetX={pnOffsetX}
-                  setOffsetX={setPnOffsetX}
-                  fontSize={pnFontSize}
-                  setFontSize={setPnFontSize}
-                  color={pnColor}
-                  setColor={setPnColor}
-                />
-
-                <CenterLabelSettings
-                  enabled={clEnabled}
-                  setEnabled={setClEnabled}
-                  pos={clPos}
-                  setPos={setClPos}
-                  text={clText}
-                  setText={setClText}
-                  scope={clScope}
-                  setScope={setClScope}
-                  customPages={clCustomPages}
-                  setCustomPages={setClCustomPages}
-                  y={clY}
-                  setY={setClY}
-                  offsetX={clOffsetX}
-                  setOffsetX={setClOffsetX}
-                  fontSize={clFontSize}
-                  setFontSize={setClFontSize}
-                  color={clColor}
-                  setColor={setClColor}
-                />
-
-                <TableSettings
-                  enabled={tableEnabled}
-                  setEnabled={setTableEnabled}
-                  striped={tableStriped}
-                  setStriped={setTableStriped}
-                  borderWidth={tableBorderWidth}
-                  setBorderWidth={setTableBorderWidth}
-                  headerColor={tableHeaderColor}
-                  setHeaderColor={setTableHeaderColor}
-                />
-
-                <ImageSettings
-                  enabled={imgEnabled}
-                  setEnabled={setImgEnabled}
-                  layout={imgLayout}
-                  setLayout={setImgLayout}
-                  sizing={imgSizing}
-                  setSizing={setImgSizing}
+                  headerEnabled={headerEnabled}
+                  setHeaderEnabled={setHeaderEnabled}
+                  headerText={headerText}
+                  setHeaderText={setHeaderText}
+                  headerAlign={headerAlign}
+                  setHeaderAlign={setHeaderAlign}
+                  headerColor={headerColor}
+                  setHeaderColor={setHeaderColor}
+                  headerFontSize={headerFontSize}
+                  setHeaderFontSize={setHeaderFontSize}
+                  headerBorder={headerBorder}
+                  setHeaderBorder={setHeaderBorder}
+                  headerBorderColor={headerBorderColor}
+                  setHeaderBorderColor={setHeaderBorderColor}
+                  footerEnabled={footerEnabled}
+                  setFooterEnabled={setFooterEnabled}
+                  footerText={footerText}
+                  setFooterText={setFooterText}
+                  footerAlign={footerAlign}
+                  setFooterAlign={setFooterAlign}
+                  footerColor={footerColor}
+                  setFooterColor={setFooterColor}
+                  footerFontSize={footerFontSize}
+                  setFooterFontSize={setFooterFontSize}
+                  footerBorder={footerBorder}
+                  setFooterBorder={setFooterBorder}
+                  footerBorderColor={footerBorderColor}
+                  setFooterBorderColor={setFooterBorderColor}
+                  pnEnabled={pnEnabled}
+                  setPnEnabled={setPnEnabled}
+                  pnPos={pnPos}
+                  setPnPos={setPnPos}
+                  pnAlign={pnAlign}
+                  setPnAlign={setPnAlign}
+                  pnPreset={pnPreset}
+                  setPnPreset={setPnPreset}
+                  pnTemplate={pnTemplate}
+                  setPnTemplate={setPnTemplate}
+                  pnFormat={pnFormat}
+                  setPnFormat={setPnFormat}
+                  pnY={pnY}
+                  setPnY={setPnY}
+                  pnOffsetX={pnOffsetX}
+                  setPnOffsetX={setPnOffsetX}
+                  pnFontSize={pnFontSize}
+                  setPnFontSize={setPnFontSize}
+                  pnColor={pnColor}
+                  setPnColor={setPnColor}
+                  clEnabled={clEnabled}
+                  setClEnabled={setClEnabled}
+                  clPos={clPos}
+                  setClPos={setClPos}
+                  clText={clText}
+                  setClText={setClText}
+                  clY={clY}
+                  setClY={setClY}
+                  clOffsetX={clOffsetX}
+                  setClOffsetX={setClOffsetX}
+                  clFontSize={clFontSize}
+                  setClFontSize={setClFontSize}
+                  clColor={clColor}
+                  setClColor={setClColor}
+                  tableEnabled={tableEnabled}
+                  setTableEnabled={setTableEnabled}
+                  tableStriped={tableStriped}
+                  setTableStriped={setTableStriped}
+                  tableBorderWidth={tableBorderWidth}
+                  setTableBorderWidth={setTableBorderWidth}
+                  tableHeaderColor={tableHeaderColor}
+                  setTableHeaderColor={setTableHeaderColor}
+                  imgEnabled={imgEnabled}
+                  setImgEnabled={setImgEnabled}
+                  imgLayout={imgLayout}
+                  setImgLayout={setImgLayout}
+                  imgSizing={imgSizing}
+                  setImgSizing={setImgSizing}
+                  onReset={resetAllSettings}
                 />
               </div>
-            </div>
-          </div>
+            )}
+          </aside>
 
-          {/* RIGHT PANE: PREVIEW & CODE */}
-          <div className="pane-right">
-            {/* Header */}
-            <div className="hstack justify-between p-3 border-bottom bg-white justify-center">
+          {/* VISUAL CANVAS & OUTPUT ZONE */}
+          <section className="pane-canvas flex flex-col">
+            <div className="canvas-header-bar">
               <ViewToggle mode={mode} setMode={setMode} />
-              <div className="hstack gap-2">
-                <button
-                  className={`btn btn-sm ${downloading ? "loading" : ""}`}
-                  onClick={handleGenerate}
-                  disabled={downloading}
-                >
-                  {downloading ? "Processing..." : "Download PDF"}
-                </button>
-              </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-hidden relative bg-gray-50 px-4 min-h-0">
+            <div className="canvas-body custom-scrollbar">
               {mode === "preview" ? (
-                <div className="pane-scrollable p-4 flex flex-col items-center justify-center bg-gray-100">
+                <div className="pdf-viewport">
                   {isStale ? (
-                    <div className="vstack gap-2 items-center text-center">
-                      <p className="text-muted">Preview is outdated</p>
-                      <button className="btn" onClick={handleUpdatePreview}>
-                        Generate Preview
+                    <div className="premium-empty-state outline border p-5 max-w-sm rounded bg-white shadow-sm">
+                      <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="text-primary mb-2 animate-pulse"
+                      >
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                      </svg>
+                      <p className="empty-title">Changes Pending</p>
+                      <p className="empty-subtitle">
+                        Click the build button below to regenerate the active
+                        PDF preview sheet.
+                      </p>
+                      <button
+                        className="btn btn-primary btn-sm mt-3 w-full"
+                        onClick={handleUpdatePreview}
+                      >
+                        Regenerate Sheet
                       </button>
                     </div>
                   ) : (
                     previewConfig && (
-                      <div className="shadow-lg w-full h-full relative">
-                        <PdfPreview {...previewConfig}>
+                      <div className="pdf-paper shadow-premium">
+                        <PdfPreview key={previewKey} {...previewConfig}>
                           <DemoPdfContent
                             items={previewConfig.items}
                             imgLayout={imgEnabled ? imgLayout : undefined}
@@ -720,69 +806,94 @@ export const DemoApp: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="h-full">
-                  <CodeBlock
-                    className="code-viewer-container"
-                    code={generateReactCode(items, {
-                      metadata,
-                      layout,
-                      margins,
-                      typography,
-                      baseColor,
-                      autoSave,
-                      pnEnabled,
-                      pnPos,
-                      pnAlign,
-                      pnScope,
-                      pnCustomPages,
-                      pnY,
-                      pnOffsetX,
-                      pnFontSize,
-                      pnColor,
-                      pnPreset,
-                      pnTemplate,
-                      pnFormat,
-                      clEnabled,
-                      clText,
-                      clScope,
-                      clCustomPages,
-                      clY,
-                      clOffsetX,
-                      clFontSize,
-                      clColor,
-                      clPos,
-                      headerEnabled,
-                      headerText,
-                      headerAlign,
-                      headerColor,
-                      headerFontSize,
-                      headerBorder,
-                      headerBorderColor,
-                      footerEnabled,
-                      footerText,
-                      footerAlign,
-                      footerColor,
-                      footerFontSize,
-                      footerBorder,
-                      footerBorderColor,
-                      imgLayout,
-                      imgSizing,
-                      tableStriped,
-                      tableBorderWidth,
-                      tableHeaderColor,
-                    })}
-                  />
+                <div className="code-block-viewer-wrapper">
+                  <CodeBlock code={codeString} />
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </section>
+        </main>
       ) : (
-        <div className="flex-1 overflow-y-auto w-full p-4 min-h-0">
-          <div className="docs-viewer-container">
-            <DocsContent />
+        /* DOCUMENTATION INTERFACE */
+        <main className="app-main documentation-container custom-scrollbar">
+          <div className="docs-workspace">
+            {/* Navigatable Table of Contents Sidebar */}
+            <aside className="docs-toc-sidebar">
+              <div className="toc-title">Documentation</div>
+              <nav className="toc-nav">
+                <a href="#features" className="toc-link">
+                  Features
+                </a>
+
+                <div className="toc-group">
+                  <span className="toc-group-title">Components</span>
+                  <a href="#pdfdocument" className="toc-link">
+                    PdfDocument
+                  </a>
+                  <a href="#pdftext" className="toc-link">
+                    PdfText
+                  </a>
+                  <a href="#pdfpreview" className="toc-link">
+                    PdfPreview
+                  </a>
+                  <a href="#pdftable" className="toc-link">
+                    PdfTable
+                  </a>
+                  <a href="#pdflist" className="toc-link">
+                    PdfList
+                  </a>
+                  <a href="#pdfimage" className="toc-link">
+                    PdfImage
+                  </a>
+                  <a href="#pdfview" className="toc-link">
+                    PdfView
+                  </a>
+                  <a href="#pdfspan" className="toc-link">
+                    PdfSpan
+                  </a>
+                  <a href="#pdfsvg" className="toc-link">
+                    PdfSvg
+                  </a>
+                </div>
+
+                <a href="#debug-spacing" className="toc-link">
+                  Debug Overlays
+                </a>
+                <a href="#css-classes" className="toc-link">
+                  CSS Styling
+                </a>
+                <a href="#global-props" className="toc-link">
+                  Global Props
+                </a>
+
+                <div className="toc-group">
+                  <span className="toc-group-title">Advanced</span>
+                  <a href="#recurring" className="toc-link">
+                    Recurring Items
+                  </a>
+                  <a href="#rgba" className="toc-link">
+                    RGBA Colors
+                  </a>
+                  <a href="#auto-save" className="toc-link">
+                    Auto-Save
+                  </a>
+                  <a href="#custom-export" className="toc-link">
+                    Custom Exporter
+                  </a>
+                </div>
+
+                <a href="#typescript" className="toc-link">
+                  TypeScript
+                </a>
+              </nav>
+            </aside>
+
+            {/* Scrollable Documentation Content */}
+            <div className="docs-viewer-container">
+              <DocsContent />
+            </div>
           </div>
-        </div>
+        </main>
       )}
     </div>
   );

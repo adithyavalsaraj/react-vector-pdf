@@ -177,8 +177,9 @@ export const PdfViewInit: React.FC<PdfViewInitProps> = ({
               colX += finalWidths[i] + rowContext.gap;
             }
 
-            // Expose computed colWidth to finisher via viewState
+            // Expose computed colWidth and colX to finisher via viewState
             (viewState as any).colWidth = colWidth;
+            (viewState as any).colX = colX;
 
             const targetAbsoluteLeft = colX + pad.left;
             const targetAbsoluteRight = colX + colWidth - pad.right;

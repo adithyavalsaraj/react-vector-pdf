@@ -43,9 +43,8 @@ export interface PdfRowContextValue {
 export const PdfRowContext = React.createContext<PdfRowContextValue | null>(null);
 
 export const PdfView: React.FC<PdfViewProps> = ({
-  style = {},
+  style: styleProp = {},
   className,
-  style: styleProp,
   children,
   debug,
   x,
@@ -60,12 +59,15 @@ export const PdfView: React.FC<PdfViewProps> = ({
     styleProp as React.CSSProperties
   );
 
+  // Use styleProp as the canonical style object (was previously double-destructured causing it to be always {})
+  const style = styleProp as ViewStyle;
+
   const viewState = useRef<{
     start?: { x: number; y: number; page?: number };
     isAbsolute?: boolean;
   }>({}).current;
 
-  const isRow = (style as ViewStyle).flexDirection === "row";
+  const isRow = (style as ViewStyle).flexDirection === "row" || (className || "").includes("flex-row");
   const rowStateRef = React.useRef<{ startX: number; startY: number; finalYs: number[] }>({
     startX: 0,
     startY: 0,
@@ -73,9 +75,27 @@ export const PdfView: React.FC<PdfViewProps> = ({
   });
 
   if (isRow) {
-    const childArray = React.Children.toArray(children);
+    let childArray = React.Children.toArray(children);
+    // Flatten fragments to correctly establish grid columns
+    childArray = childArray.flatMap((child) => {
+      if (React.isValidElement(child) && child.type === React.Fragment) {
+        return React.Children.toArray((child.props as any).children);
+      }
+      return child;
+    }) as any;
     const N = childArray.length;
-    const gap = (style as ViewStyle).gap ?? 0;
+    
+    let gap = (style as ViewStyle).gap;
+    if (gap === undefined && className) {
+      const match = className.match(/\bgap-(\d+)\b/);
+      if (match) {
+        gap = parseInt(match[1]) * 4 * (25.4 / 96);
+      } else {
+        gap = 0;
+      }
+    } else {
+      gap = gap ?? 0;
+    }
 
     // Collect explicit custom widths from sibling column definitions
     const customWidths = childArray.map((child) => {

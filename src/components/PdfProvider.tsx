@@ -47,14 +47,10 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
 }) => {
   const renderer = React.useMemo(() => new PdfRenderer(options), [options]);
 
-  // Synchronously reset the document on every build pass to ensure clean state
-  renderer.reset();
-
-  React.useEffect(() => {
-    if (metadata) {
-      renderer.setMetadata(metadata);
-    }
-  }, [renderer, metadata]);
+  // Track the current configuration as a ref so header/footer drawers always
+  // have the latest values without needing to recreate the renderer.
+  const configRef = React.useRef({ header, footer, pageNumbers, centerLabel, metadata, onReady });
+  configRef.current = { header, footer, pageNumbers, centerLabel, metadata, onReady };
 
   React.useEffect(() => {
     const inScope = (
@@ -79,6 +75,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
       page: number,
       total: number
     ) => {
+      const { pageNumbers } = configRef.current;
       if (!pageNumbers?.enabled) return;
       if (!inScope(page, pageNumbers.scope)) return;
       const preset = pageNumbers.preset ?? "page-slash-total";
@@ -113,6 +110,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
       page: number,
       total: number
     ) => {
+      const { centerLabel } = configRef.current;
       if (!centerLabel?.enabled) return;
       if (!inScope(page, centerLabel.scope)) return;
       const align: "left" | "right" | "center" = "center";
@@ -133,6 +131,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
 
     renderer.setHeaderFooter(
       (pdf, page, total) => {
+        const { header, pageNumbers, centerLabel } = configRef.current;
         if (header) header(renderer, page, total);
         if (pageNumbers?.position === "header")
           drawPageNumber("header", page, total);
@@ -140,6 +139,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
           drawCenterLabel("header", page, total);
       },
       (pdf, page, total) => {
+        const { footer, pageNumbers, centerLabel } = configRef.current;
         if (pageNumbers?.position === "footer")
           drawPageNumber("footer", page, total);
         if (footer) footer(renderer, page, total);
@@ -150,6 +150,7 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
 
     // Wait for async tasks (images) then call onReady
     renderer.waitForTasks().then(() => {
+      const { onReady } = configRef.current;
       onReady?.(renderer);
     });
 
@@ -158,6 +159,12 @@ export const PdfDocument: React.FC<PdfDocumentProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [renderer]);
+
+  React.useEffect(() => {
+    if (metadata) {
+      renderer.setMetadata(metadata);
+    }
+  }, [renderer, metadata]);
 
   React.useEffect(() => {
     if (autoSave && filename) {

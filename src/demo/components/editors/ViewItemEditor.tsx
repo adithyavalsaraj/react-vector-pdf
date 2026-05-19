@@ -21,63 +21,67 @@ export const ViewItemEditor: React.FC<ViewItemEditorProps> = ({
     });
   };
 
-  return (
-    <div className="control col-span-3 card p-2 bg-light vstack gap-2">
-      <div className="hstack justify-between">
-        <label className="font-bold">View Configuration</label>
-      </div>
+  const isRichNode = typeof props.children === "object" && props.children !== null;
 
-      <div className="grid grid-2 gap-2">
-        {/* ClassName & Gap */}
-        <div className="control">
-          <label>CSS Class</label>
+  return (
+    <div className="editor-group-container">
+      {/* CLASS AND GAP */}
+      <div className="editor-row gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">CSS Class Utilities</label>
           <input
             type="text"
             value={props.className || ""}
             onChange={(e) => onChange({ className: e.target.value })}
-            placeholder="e.g. p-4 bg-gray-100"
-            className="input-sm"
+            placeholder="e.g., flex flex-row gap-4 p-4 rounded"
+            className="premium-input"
           />
         </div>
-        <div className="control">
-          <label>Gap (mm)</label>
+        <div className="editor-field w-32">
+          <label className="editor-label">Item Gap (mm)</label>
           <input
             type="number"
             min="0"
             value={style.gap || 0}
             onChange={(e) => handleStyleChange("gap", Number(e.target.value))}
-            className="input-sm"
+            className="premium-input"
           />
         </div>
+      </div>
 
-        {/* Colors */}
-        <ColorPicker
-          label="Background Color"
-          value={style.fillColor}
-          onChange={(val) => handleStyleChange("fillColor", val)}
-        />
-        <ColorPicker
-          label="Border Color"
-          value={style.borderColor}
-          onChange={(val) => handleStyleChange("borderColor", val)}
-        />
+      {/* COLORS */}
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field flex-1">
+          <ColorPicker
+            label="Background Fill"
+            value={style.fillColor}
+            onChange={(val) => handleStyleChange("fillColor", val)}
+          />
+        </div>
+        <div className="editor-field flex-1">
+          <ColorPicker
+            label="Border Stroke"
+            value={style.borderColor}
+            onChange={(val) => handleStyleChange("borderColor", val)}
+          />
+        </div>
+      </div>
 
-        {/* Dimensions */}
-        <div className="control">
-          <label>Border Width</label>
+      {/* DIMENSIONS & RADIUS */}
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Border Width (mm)</label>
           <input
             type="number"
             min="0"
             step="0.1"
             value={style.borderWidth || 0}
-            onChange={(e) =>
-              handleStyleChange("borderWidth", Number(e.target.value))
-            }
-            className="input-sm"
+            onChange={(e) => handleStyleChange("borderWidth", Number(e.target.value))}
+            className="premium-input"
           />
         </div>
-        <div className="control">
-          <label>Padding</label>
+        <div className="editor-field flex-1">
+          <label className="editor-label">Padding (mm)</label>
           <input
             type="number"
             min="0"
@@ -88,40 +92,52 @@ export const ViewItemEditor: React.FC<ViewItemEditorProps> = ({
                 e.target.value === "" ? undefined : Number(e.target.value)
               )
             }
-            className="input-sm"
+            className="premium-input"
           />
         </div>
-        <div className="control">
-          <label>Border Radius</label>
+        <div className="editor-field flex-1">
+          <label className="editor-label">Corner Radius (mm)</label>
           <input
             type="number"
             min="0"
             value={style.radius || 0}
-            onChange={(e) =>
-              handleStyleChange("radius", Number(e.target.value))
-            }
-            className="input-sm"
+            onChange={(e) => handleStyleChange("radius", Number(e.target.value))}
+            className="premium-input"
           />
         </div>
       </div>
 
-      <div className="control mt-2">
-        <ColorPicker
-          label="Text Color"
-          value={style.color || "#000000"}
-          onChange={(val) => handleStyleChange("color", val)}
-        />
+      {/* TEXT COLOR & CHILDREN */}
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field w-52">
+          <ColorPicker
+            label="Default Text Color"
+            value={style.color || "#000000"}
+            onChange={(val) => handleStyleChange("color", val)}
+          />
+        </div>
       </div>
 
-      <div className="control mt-2">
-        <label>Content (Text)</label>
-        <textarea
-          rows={2}
-          value={typeof props.children === "string" ? props.children : ""}
-          onChange={(e) => onChange({ children: e.target.value })}
-          placeholder="Enter text to display inside the box..."
-          className="input-sm"
-        />
+      <div className="editor-row mt-3">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Box Inner Content</label>
+          {isRichNode ? (
+            <div className="rich-badge-alert">
+              <span className="sparkle-icon">✨</span>
+              <div className="rich-badge-content">
+                <strong>Flex Grid Active:</strong> This container wraps sibling columns side-by-side. You can edit this structure in the <strong>"React Code"</strong> tab or clear it to use simple text children.
+              </div>
+            </div>
+          ) : (
+            <textarea
+              rows={2}
+              value={typeof props.children === "string" ? props.children : ""}
+              onChange={(e) => onChange({ children: e.target.value })}
+              placeholder="Enter text to render inside the view..."
+              className="premium-textarea"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

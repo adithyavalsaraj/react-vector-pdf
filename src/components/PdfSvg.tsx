@@ -1,6 +1,7 @@
 import React, { useId } from "react";
 import { usePdf } from "./PdfProvider";
 import { usePdfItemContext } from "./internal/PdfItemContext";
+import { hexToRgb } from "../core/utils";
 
 export interface PdfSvgProps {
   children?: React.ReactNode;
@@ -59,44 +60,24 @@ export const PdfSvg: React.FC<PdfSvgProps> = ({
         const scaleX = w / vbW;
         const scaleY = h / vbH;
 
-        const parseColor = (colorStr: string): [number, number, number] | null => {
-          if (!colorStr || colorStr === "none" || colorStr === "transparent") return null;
-          if (colorStr.startsWith("rgb")) {
-            const parts = colorStr.match(/\d+/g);
-            if (parts && parts.length >= 3) {
-              return [parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])];
-            }
-          }
-          if (colorStr.startsWith("#")) {
-            const hex = colorStr.substring(1);
-            if (hex.length === 3) {
-              return [
-                parseInt(hex[0] + hex[0], 16),
-                parseInt(hex[1] + hex[1], 16),
-                parseInt(hex[2] + hex[2], 16),
-              ];
-            }
-            if (hex.length === 6) {
-              return [
-                parseInt(hex.substring(0, 2), 16),
-                parseInt(hex.substring(2, 4), 16),
-                parseInt(hex.substring(4, 6), 16),
-              ];
-            }
-          }
-          return null;
-        };
-
         const setSvgStyle = (el: Element) => {
           const computed = window.getComputedStyle(el);
-          const fill = computed.fill;
-          const stroke = computed.stroke;
+          const rawFill = el.getAttribute("fill");
+          const rawStroke = el.getAttribute("stroke");
+
+          // Prioritize direct presentation attributes over computed browser defaults/inheritance
+          const fill = (rawFill && rawFill !== "none")
+            ? rawFill
+            : computed.fill;
+          const stroke = (rawStroke && rawStroke !== "none")
+            ? rawStroke
+            : computed.stroke;
 
           let hasFill = fill && fill !== "none" && fill !== "transparent";
           let hasStroke = stroke && stroke !== "none" && stroke !== "transparent";
 
           if (hasStroke) {
-            const rgb = parseColor(stroke);
+            const rgb = hexToRgb(stroke!);
             if (rgb) pdf.instance.setDrawColor(rgb[0], rgb[1], rgb[2]);
 
             const attrStrokeWidth = parseFloat(el.getAttribute("stroke-width") ?? "1");
@@ -105,13 +86,18 @@ export const PdfSvg: React.FC<PdfSvgProps> = ({
           }
 
           if (hasFill) {
-            const rgb = parseColor(fill);
+            const rgb = hexToRgb(fill!);
             if (rgb) pdf.instance.setFillColor(rgb[0], rgb[1], rgb[2]);
           }
 
-          let styleStr = "";
-          if (hasFill) styleStr += "F";
-          if (hasStroke) styleStr += "D";
+          let styleStr = "S";
+          if (hasFill && hasStroke) {
+            styleStr = "B"; // PDF operator for Fill and Stroke
+          } else if (hasFill) {
+            styleStr = "f"; // PDF operator for Fill
+          } else if (hasStroke) {
+            styleStr = "S"; // PDF operator for Stroke
+          }
           return styleStr;
         };
 
@@ -125,9 +111,8 @@ export const PdfSvg: React.FC<PdfSvgProps> = ({
 
           while ((match = commandRegex.exec(d)) !== null) {
             const cmd = match[1];
-            const args = match[2]
-              .trim()
-              .split(/[\s,]+/)
+            // Match all floats/coordinates, handling leading negative signs and optional decimals without spaces
+            const args = (match[2].match(/-?\d*\.?\d+(?:[eE][-+]?\d+)?/g) || [])
               .map(parseFloat)
               .filter((n) => !isNaN(n));
 

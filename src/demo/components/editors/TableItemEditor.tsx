@@ -14,32 +14,29 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
   const data = props.data || [];
 
   return (
-    <div className="control col-span-3 card p-2 bg-light vstack gap-3">
-      <div className="hstack justify-between">
-        <label className="font-bold">Table Configuration</label>
-      </div>
-
-      <div className="grid grid-2 gap-2">
-        {/* ClassName */}
-        <div className="control col-span-2">
-          <label>CSS Class</label>
+    <div className="editor-group-container">
+      {/* GLOBAL SETTINGS */}
+      <div className="editor-row gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">CSS Class Utilities</label>
           <input
             type="text"
             value={props.className || ""}
             onChange={(e) => onChange({ className: e.target.value })}
-            placeholder="e.g. mb-4 text-sm"
-            className="input-sm"
+            placeholder="e.g., border mb-4 text-xs"
+            className="premium-input"
           />
         </div>
+      </div>
 
-        {/* Global Table Settings */}
-        <div className="control">
-          <label>Border Width (mm)</label>
+      <div className="editor-row mt-3 gap-4">
+        <div className="editor-field flex-1">
+          <label className="editor-label">Border Width (mm)</label>
           <input
             type="number"
             step="0.1"
             min="0"
-            placeholder="Global"
+            placeholder="Default"
             value={props.borderWidth ?? ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -47,12 +44,11 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                 borderWidth: val === "" ? undefined : Math.max(0, Number(val)),
               });
             }}
-            className="input-sm"
+            className="premium-input"
           />
         </div>
-
-        <div className="control">
-          <label>Cell Padding (mm)</label>
+        <div className="editor-field flex-1">
+          <label className="editor-label">Cell Padding (mm)</label>
           <input
             type="number"
             min="0"
@@ -64,42 +60,42 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                 cellPadding: val === "" ? undefined : Math.max(0, Number(val)),
               });
             }}
-            className="input-sm"
+            className="premium-input"
           />
         </div>
       </div>
 
-      <div className="hr"></div>
-
-      {/* HEADER Configuration */}
-      <div>
-        <label className="font-bold text-xs uppercase text-muted mb-2 block">
-          Header Styling
-        </label>
-        <div className="grid grid-2 gap-2">
-          <ColorPicker
-            label="Background Color"
-            value={props.headerStyle?.fillColor}
-            onChange={(val) =>
-              onChange({
-                headerStyle: {
-                  ...props.headerStyle,
-                  fillColor: val || undefined,
-                },
-              })
-            }
-          />
-          <ColorPicker
-            label="Text Color"
-            value={props.headerStyle?.color}
-            onChange={(val) =>
-              onChange({
-                headerStyle: { ...props.headerStyle, color: val || undefined },
-              })
-            }
-          />
-          <div className="control">
-            <label>Vertical Align</label>
+      {/* HEADER STYLING */}
+      <div className="editor-section-card mt-4">
+        <h4 className="editor-section-title">Header Styling</h4>
+        <div className="editor-row gap-4 mt-2">
+          <div className="editor-field flex-1">
+            <ColorPicker
+              label="Fill Color"
+              value={props.headerStyle?.fillColor}
+              onChange={(val) =>
+                onChange({
+                  headerStyle: {
+                    ...props.headerStyle,
+                    fillColor: val || undefined,
+                  },
+                })
+              }
+            />
+          </div>
+          <div className="editor-field flex-1">
+            <ColorPicker
+              label="Text Color"
+              value={props.headerStyle?.color}
+              onChange={(val) =>
+                onChange({
+                  headerStyle: { ...props.headerStyle, color: val || undefined },
+                })
+              }
+            />
+          </div>
+          <div className="editor-field w-32">
+            <label className="editor-label">Align</label>
             <select
               value={props.headerStyle?.verticalAlign ?? "middle"}
               onChange={(e) =>
@@ -110,7 +106,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   },
                 })
               }
-              className="select-sm"
+              className="premium-select"
             >
               <option value="top">Top</option>
               <option value="middle">Middle</option>
@@ -120,16 +116,12 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
         </div>
       </div>
 
-      <div className="hr"></div>
-
-      {/* BODY / ROW Configuration */}
-      <div>
-        <label className="font-bold text-xs uppercase text-muted mb-2 block">
-          Row Styling
-        </label>
-        <div className="grid grid-2 gap-2">
-          <div className="control">
-            <label>Striped Rows</label>
+      {/* ROW STYLING */}
+      <div className="editor-section-card mt-4">
+        <h4 className="editor-section-title">Row Styling</h4>
+        <div className="editor-row gap-4 mt-2">
+          <div className="editor-field flex-1">
+            <label className="editor-label">Striped Pattern</label>
             <select
               value={
                 props.striped === undefined
@@ -146,33 +138,35 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                       : e.target.value === "yes",
                 })
               }
-              className="select-sm"
+              className="premium-select"
             >
-              <option value="global">Global Setting</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
+              <option value="global">Use Global</option>
+              <option value="yes">Striped</option>
+              <option value="no">Solid</option>
             </select>
           </div>
-
-          {/* Stripe Color (only if striped is yes or global?) - Let's just show it */}
-          <ColorPicker
-            label="Stripe Color"
-            value={props.stripeColor}
-            onChange={(val) => onChange({ stripeColor: val || undefined })}
-          />
-
-          <ColorPicker
-            label="Text Color"
-            value={props.rowStyle?.color}
-            onChange={(val) =>
-              onChange({
-                rowStyle: { ...props.rowStyle, color: val || undefined },
-              })
-            }
-          />
-
-          <div className="control">
-            <label>Vertical Align</label>
+          <div className="editor-field flex-1">
+            <ColorPicker
+              label="Stripe Color"
+              value={props.stripeColor}
+              onChange={(val) => onChange({ stripeColor: val || undefined })}
+            />
+          </div>
+        </div>
+        <div className="editor-row gap-4 mt-3">
+          <div className="editor-field flex-1">
+            <ColorPicker
+              label="Row Text Color"
+              value={props.rowStyle?.color}
+              onChange={(val) =>
+                onChange({
+                  rowStyle: { ...props.rowStyle, color: val || undefined },
+                })
+              }
+            />
+          </div>
+          <div className="editor-field flex-1">
+            <label className="editor-label">Vertical Align</label>
             <select
               value={props.rowStyle?.verticalAlign ?? "top"}
               onChange={(e) =>
@@ -183,7 +177,7 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   },
                 })
               }
-              className="select-sm"
+              className="premium-select"
             >
               <option value="top">Top</option>
               <option value="middle">Middle</option>
@@ -193,15 +187,14 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
         </div>
       </div>
 
-      <div className="hr"></div>
-
-      <div>
-        <label className="mb-1 block">Columns</label>
-        <div className="vstack gap-1">
+      {/* COLUMNS */}
+      <div className="editor-section-card mt-4">
+        <h4 className="editor-section-title">Table Columns</h4>
+        <div className="vstack gap-2 mt-2">
           {columns.map((col: any, cidx: number) => (
-            <div key={cidx} className="hstack gap-1">
+            <div key={cidx} className="hstack gap-2 items-center">
               <input
-                placeholder="Header"
+                placeholder="Column Header"
                 value={col.header}
                 onChange={(e) => {
                   const newCols = [...columns];
@@ -211,10 +204,10 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   };
                   onChange({ columns: newCols });
                 }}
-                className="input-sm"
+                className="premium-input flex-1"
               />
               <input
-                placeholder="Prop"
+                placeholder="Accessor key"
                 value={col.accessor}
                 onChange={(e) => {
                   const newCols = [...columns];
@@ -224,25 +217,26 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                   };
                   onChange({ columns: newCols });
                 }}
-                className="input-sm"
+                className="premium-input flex-1"
               />
               <button
-                className="btn btn-xs danger"
+                className="btn danger btn-sm"
                 onClick={() => {
-                  const newCols = columns.filter(
-                    (_: any, i: number) => i !== cidx
-                  );
+                  const newCols = columns.filter((_: any, i: number) => i !== cidx);
                   onChange({ columns: newCols });
                 }}
               >
-                Delete
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
           ))}
           <button
-            className="btn btn-sm mt-2"
+            className="btn btn-outline btn-sm mt-2 w-fit"
             onClick={() => {
-              const newCols = [...columns, { header: "New", accessor: "key" }];
+              const newCols = [...columns, { header: "New Column", accessor: "new_col" }];
               onChange({ columns: newCols });
             }}
           >
@@ -251,39 +245,35 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block">Data Rows</label>
-        <div className="vstack gap-2 overflow-x-auto">
+      {/* DATA ROWS */}
+      <div className="editor-section-card mt-4">
+        <h4 className="editor-section-title">Data Rows</h4>
+        <div className="vstack gap-3 mt-2">
           {data.map((row: any, ridx: number) => (
-            <div key={ridx} className="card p-2 border">
-              <div className="hstack justify-between mb-1">
-                <span className="text-xs font-bold">Row {ridx + 1}</span>
+            <div key={ridx} className="card p-3 border rounded bg-gray-50">
+              <div className="hstack justify-between mb-2">
+                <span className="text-xs font-bold text-muted">Row #{ridx + 1}</span>
                 <button
-                  className="btn btn-xs danger"
+                  className="btn danger btn-xs"
                   onClick={() => {
-                    const newData = data.filter(
-                      (_: any, i: number) => i !== ridx
-                    );
+                    const newData = data.filter((_: any, i: number) => i !== ridx);
                     onChange({ data: newData });
                   }}
                 >
-                  Delete Row
+                  Remove Row
                 </button>
               </div>
-              <div className="hstack gap-2 wrap">
+              <div className="vstack gap-3">
                 {columns.map((col: any) => {
                   const cell =
                     typeof row[col.accessor] === "object"
                       ? row[col.accessor]
                       : { content: row[col.accessor] };
                   return (
-                    <div
-                      key={col.accessor}
-                      className="vstack gap-1 border p-1 rounded"
-                    >
-                      <span className="text-xs text-muted">{col.header}</span>
+                    <div key={col.accessor} className="border-bottom pb-2">
+                      <span className="text-2xs font-bold uppercase text-muted block mb-1">{col.header}</span>
                       <input
-                        className="text-xs input-sm"
+                        className="premium-input text-xs"
                         value={cell.content}
                         onChange={(e) => {
                           const newData = [...data];
@@ -297,12 +287,12 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                           onChange({ data: newData });
                         }}
                       />
-                      <div className="hstack gap-1">
-                        <div className="vstack gap-0 w-1/2">
-                          <span className="text-2xs text-muted">RowSpan</span>
+                      <div className="hstack gap-4 mt-2">
+                        <div className="flex-1">
+                          <span className="text-2xs text-muted">Row Span</span>
                           <input
                             type="number"
-                            className="text-xs w-full input-sm"
+                            className="premium-input text-xs mt-1"
                             value={cell.rowSpan || ""}
                             onChange={(e) => {
                               const raw = parseInt(e.target.value);
@@ -310,17 +300,11 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                               if (isNaN(raw)) {
                                 newData[ridx] = {
                                   ...row,
-                                  [col.accessor]: {
-                                    ...cell,
-                                    rowSpan: undefined,
-                                  },
+                                  [col.accessor]: { ...cell, rowSpan: undefined },
                                 };
                               } else {
                                 const maxPossible = data.length - ridx;
-                                const val = Math.max(
-                                  1,
-                                  Math.min(raw, maxPossible)
-                                );
+                                const val = Math.max(1, Math.min(raw, maxPossible));
                                 newData[ridx] = {
                                   ...row,
                                   [col.accessor]: { ...cell, rowSpan: val },
@@ -330,11 +314,11 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                             }}
                           />
                         </div>
-                        <div className="vstack gap-0 w-1/2">
-                          <span className="text-2xs text-muted">ColSpan</span>
+                        <div className="flex-1">
+                          <span className="text-2xs text-muted">Col Span</span>
                           <input
                             type="number"
-                            className="text-xs w-full input-sm"
+                            className="premium-input text-xs mt-1"
                             value={cell.colSpan || ""}
                             onChange={(e) => {
                               const raw = parseInt(e.target.value);
@@ -342,20 +326,12 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
                               if (isNaN(raw)) {
                                 newData[ridx] = {
                                   ...row,
-                                  [col.accessor]: {
-                                    ...cell,
-                                    colSpan: undefined,
-                                  },
+                                  [col.accessor]: { ...cell, colSpan: undefined },
                                 };
                               } else {
-                                const colIdx = columns.findIndex(
-                                  (c: any) => c.accessor === col.accessor
-                                );
+                                const colIdx = columns.findIndex((c: any) => c.accessor === col.accessor);
                                 const maxPossible = columns.length - colIdx;
-                                const val = Math.max(
-                                  1,
-                                  Math.min(raw, maxPossible)
-                                );
+                                const val = Math.max(1, Math.min(raw, maxPossible));
                                 newData[ridx] = {
                                   ...row,
                                   [col.accessor]: { ...cell, colSpan: val },
@@ -373,11 +349,11 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
             </div>
           ))}
           <button
-            className="btn btn-sm mt-2"
+            className="btn btn-outline btn-sm mt-2 w-fit"
             onClick={() => {
               const newRow: any = {};
               columns.forEach((c: any) => {
-                newRow[c.accessor] = "Value";
+                newRow[c.accessor] = "Cell Value";
               });
               onChange({ data: [...data, newRow] });
             }}
@@ -387,25 +363,17 @@ export const TableItemEditor: React.FC<TableItemEditorProps> = ({
         </div>
       </div>
 
-      <div className="control card p-3 bg-white border">
-        <label className="cursor-pointer w-fit">
-          <div className="hstack gap-2 items-center">
-            <input
-              type="checkbox"
-              className="w-5 h-5"
-              checked={props.repeatHeader !== false}
-              onChange={(e) => onChange({ repeatHeader: e.target.checked })}
-            />
-            <strong className="text-sm">Repeat Header on new pages</strong>
-          </div>
+      {/* HEADER REPEAT OPTION */}
+      <div className="editor-row mt-4">
+        <label className="hstack gap-2 cursor-pointer items-center text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={props.repeatHeader !== false}
+            onChange={(e) => onChange({ repeatHeader: e.target.checked })}
+            className="premium-checkbox"
+          />
+          <span>Repeat header row on new pages</span>
         </label>
-
-        <div className="vstack gap-0">
-          <p className="text-xs text-muted mb-0">
-            If unchecked, the header row will only appear on the first page of
-            the table.
-          </p>
-        </div>
       </div>
     </div>
   );

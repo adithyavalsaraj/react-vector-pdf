@@ -161,9 +161,7 @@ export const useDemoApp = () => {
       type: "view",
       props: {
         className: "flex flex-row gap-4 mb-4",
-        children: React.createElement(
-          React.Fragment,
-          null,
+        children: [
           React.createElement(
             PdfView,
             {
@@ -181,7 +179,7 @@ export const useDemoApp = () => {
             React.createElement(PdfText, { fontStyle: "bold", color: "#065f46", fontSize: 10, children: "Column B (Standard)" }),
             React.createElement(PdfText, { fontSize: 8.5, color: "#064e3b", children: "This is a sibling column. It distributes space dynamically inside the flex row context." })
           )
-        ),
+        ],
       },
     },
     {
@@ -195,7 +193,9 @@ export const useDemoApp = () => {
           { viewBox: "0 0 24 24" },
           React.createElement("path", {
             d: "M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z",
-            fill: "#f59e0b"
+            fill: "#f59e0b",
+            stroke: "#d97706",
+            strokeWidth: "1"
           })
         )
       }

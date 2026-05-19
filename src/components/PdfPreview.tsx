@@ -44,7 +44,7 @@ export const PdfPreview: React.FC<PdfPreviewProps> = ({
 
       {blobUrl ? (
         <iframe
-          src={blobUrl}
+          src={`${blobUrl}#view=FitH`}
           width="100%"
           height="100%"
           className={`pdf-preview-iframe ${iframeClassName || ""}`}

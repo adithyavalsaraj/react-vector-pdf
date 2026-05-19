@@ -8,46 +8,59 @@ export interface HeaderFooterOptions {
   color: string;
   border: boolean;
   borderColor: string;
+  scope?: "all" | "first-only" | "except-first" | number[];
+}
+
+function inScope(
+  page: number,
+  total: number,
+  scope?: "all" | "first-only" | "except-first" | number[]
+): boolean {
+  if (!scope || scope === "all") return true;
+  if (scope === "first-only") return page === 1;
+  if (scope === "except-first") return page > 1;
+  if (Array.isArray(scope)) return scope.includes(page);
+  return true;
 }
 
 export function createHeaderRenderer(options: HeaderFooterOptions) {
   return (renderer: PdfRenderer, page: number, total: number) => {
     if (!options.enabled) return;
+    if (!inScope(page, total, options.scope)) return;
 
     const pdf = renderer.instance;
-    renderer.setTextStyle({
-      fontSize: Number(options.fontSize) || 10,
-      color: options.color || "#000000",
-    });
+    const fontSize = Number(options.fontSize) || 10;
+    const color = options.color || "#111827";
 
-    const textWidth =
-      (pdf.getStringUnitWidth(options.text) *
-        (Number(options.fontSize) || 10)) /
-      pdf.internal.scaleFactor;
-    let x = renderer.contentLeft;
+    // y position for header text (baseline)
+    const y = renderer.margin.top - 4;
 
-    if (options.align === "center") {
-      x = (renderer.width - textWidth) / 2;
-      // Simple center align for now - jspdf text api also supports 'align' option depending on version/wrapper
-      // But let's stick to standard positioning if we can, or use the align arg if PdfRenderer exposes it nicely.
-      // actually jspdf text takes options. But let's trust the wrapper or use simple math.
-      // Wait, PdfRenderer might abstract this? Accessing .instance means raw jsPDF.
-      pdf.text(options.text, renderer.width / 2, options.enabled ? 10 : 0, {
-        align: "center",
-      });
-    } else if (options.align === "right") {
-      pdf.text(options.text, renderer.contentRight, options.enabled ? 10 : 0, {
-        align: "right",
-      });
-    } else {
-      pdf.text(options.text, renderer.contentLeft, options.enabled ? 10 : 0);
-    }
+    // Use renderer's textRaw to properly handle fonts + color resets
+    renderer.textRaw(
+      options.text,
+      options.align === "center"
+        ? (renderer.contentLeft + renderer.contentRight) / 2
+        : options.align === "right"
+        ? renderer.contentRight
+        : renderer.contentLeft,
+      y,
+      { fontSize, color },
+      undefined,
+      options.align
+    );
 
     if (options.border) {
-      pdf.setDrawColor(options.borderColor || "#000000");
-      pdf.setLineWidth(0.1); // thin line
-      // Draw line below header
-      pdf.line(renderer.contentLeft, 12, renderer.contentRight, 12);
+      const borderColor = options.borderColor || "#e5e7eb";
+      const rgb = borderColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+      if (rgb) {
+        pdf.setDrawColor(parseInt(rgb[1], 16), parseInt(rgb[2], 16), parseInt(rgb[3], 16));
+      }
+      pdf.setLineWidth(0.2);
+      const lineY = renderer.margin.top - 1;
+      pdf.line(renderer.contentLeft, lineY, renderer.contentRight, lineY);
+      // Reset draw color
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.2);
     }
   };
 }
@@ -55,39 +68,51 @@ export function createHeaderRenderer(options: HeaderFooterOptions) {
 export function createFooterRenderer(options: HeaderFooterOptions) {
   return (renderer: PdfRenderer, page: number, total: number) => {
     if (!options.enabled) return;
+    if (!inScope(page, total, options.scope)) return;
 
     const pdf = renderer.instance;
-    renderer.setTextStyle({
-      fontSize: Number(options.fontSize) || 9,
-      color: options.color || "#000000",
-    });
+    const fontSize = Number(options.fontSize) || 9;
+    const color = options.color || "#9CA3AF";
 
-    const y = renderer.height - 10; // 10 units from bottom
+    // y position: near bottom margin
+    const y = renderer.height - renderer.margin.bottom + 4;
 
-    if (options.align === "center") {
-      pdf.text(options.text, renderer.width / 2, y, { align: "center" });
-    } else if (options.align === "right") {
-      pdf.text(options.text, renderer.contentRight, y, { align: "right" });
-    } else {
-      pdf.text(options.text, renderer.contentLeft, y);
-    }
+    renderer.textRaw(
+      options.text,
+      options.align === "center"
+        ? (renderer.contentLeft + renderer.contentRight) / 2
+        : options.align === "right"
+        ? renderer.contentRight
+        : renderer.contentLeft,
+      y,
+      { fontSize, color },
+      undefined,
+      options.align
+    );
 
     if (options.border) {
-      pdf.setDrawColor(options.borderColor || "#000000");
-      pdf.setLineWidth(0.1);
-      // Draw line above footer (a bit higher than text)
-      pdf.line(renderer.contentLeft, y - 4, renderer.contentRight, y - 4);
+      const borderColor = options.borderColor || "#e5e7eb";
+      const rgb = borderColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+      if (rgb) {
+        pdf.setDrawColor(parseInt(rgb[1], 16), parseInt(rgb[2], 16), parseInt(rgb[3], 16));
+      }
+      pdf.setLineWidth(0.2);
+      const lineY = renderer.height - renderer.margin.bottom + 1;
+      pdf.line(renderer.contentLeft, lineY, renderer.contentRight, lineY);
+      // Reset draw color
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.2);
     }
   };
 }
 
-// Keep existing helpers for backward compatibility if needed, or replace them
+// Legacy helpers for backward compatibility
 export function demoHeader(renderer: PdfRenderer, page: number, total: number) {
   const pdf = renderer.instance;
   pdf.setFontSize(10);
-  pdf.text("react-vector-pdf — Demo", renderer.contentLeft, 10);
+  pdf.text("react-vector-pdf — Demo", renderer.contentLeft, renderer.margin.top - 4);
   pdf.setLineWidth(0.2);
-  pdf.line(renderer.contentLeft, 12, renderer.contentRight, 12);
+  pdf.line(renderer.contentLeft, renderer.margin.top - 1, renderer.contentRight, renderer.margin.top - 1);
 }
 
 export function demoFooter(renderer: PdfRenderer, page: number, total: number) {
