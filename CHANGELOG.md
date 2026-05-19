@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.7.0](https://github.com/adithyavalsaraj/react-vector-pdf/compare/v0.6.1...v0.7.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* resolve syntax error in PdfViewInit and refactor comments/types ([fbd0657](https://github.com/adithyavalsaraj/react-vector-pdf/commit/fbd065778754a255f85cbc0730b5a95b6c75482d))
+* stabilize PDF engine, resolve layout bugs, and merge core features ([848033b](https://github.com/adithyavalsaraj/react-vector-pdf/commit/848033b8a21e5b7ad421c8913c047b8c05f40ecb))
+
+
+### Features
+
+* complete Phase 3 engine, custom typings, server SSR fallback, and zero-overflow wrapping ([af0a944](https://github.com/adithyavalsaraj/react-vector-pdf/commit/af0a944d715babe8b2f95734b45ee24f3b537d9a))
+
 ## [0.7.0] - 2026-05-19
 
 ### ✨ New Features
